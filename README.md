@@ -1,4 +1,4 @@
-# Red de Realizadores — V0.1
+# Red de Realizadores — V0.2
 
 Prototipo frontend navegable para Córdoba Casting — Red de Realizadores.
 
