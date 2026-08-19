@@ -28,3 +28,8 @@ Es intencional: primero se prueba Auth + perfiles + moderación antes de conecta
 
 ## Para probar admin
 La cuenta cuyo UUID convertiste a `admin` en `public.user_roles` debe iniciar sesión con su email/password real de Supabase.
+
+## V0.8.1 hotfix
+- Corregido el botón “Ingresar”: ahora abre el flujo real de Supabase.
+- Corregido “Crear mi perfil” para abrir el registro real.
+- Eliminadas referencias rotas a funciones demo antiguas que podían producir errores JavaScript.
