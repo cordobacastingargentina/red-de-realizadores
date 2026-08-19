@@ -25,6 +25,7 @@ const jobs=[
 {id:14,title:"Guionista para proyecto universitario",roles:["Guion"],description:"Proyecto final universitario. Buscamos una persona interesada en trabajar estructura y diálogos durante desarrollo.",student:true,paid:false,days:9,author:"Mora Luna",participants:[2,13]}];
 const state={isAdmin:false,route:"realizadores",loggedIn:false,currentUserId:1};
 const app=document.getElementById("app"),modal=document.getElementById("modal"),backdrop=document.getElementById("modalBackdrop"),modalContent=document.getElementById("modalContent"),accountBtn=document.getElementById("openAccountBtn");
+const adminNavLink=document.getElementById("adminNavLink");
 const realState={session:null,user:null,isAdmin:false,profile:null,privateProfile:null,moderation:null,tags:[],roles:[]};
 
 const esc=s=>String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -35,7 +36,7 @@ function topBadge(p){return p.isTopRecommended?`<span class="top-badge">★ MUY 
 function openModal(html,wide=false){modalContent.innerHTML=html;modal.classList.toggle("wide",wide);modal.classList.remove("hidden");backdrop.classList.remove("hidden")}
 function closeModal(){modal.classList.add("hidden");backdrop.classList.add("hidden");modal.classList.remove("wide")}
 document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>realAccountModal();window.addEventListener("hashchange",route);document.querySelectorAll("[data-route]").forEach(a=>a.addEventListener("click",()=>{}));
-function route(){state.route=(location.hash||"#realizadores").slice(1);({realizadores:renderDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining}[state.route]||renderDirectory)()}
+function route(){state.route=(location.hash||"#realizadores").slice(1);({realizadores:renderDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining,administracion:renderAdministration}[state.route]||renderDirectory)()}
 function matchRank(p,q,roleFilter){let rank=0;const qq=q.trim().toLowerCase();if(roleFilter){if(p.primary===roleFilter)rank+=120;else if(p.tags.some(t=>t.toLowerCase()===roleFilter.toLowerCase()))rank+=55;else return -1}if(!qq)return rank;const primary=p.primary.toLowerCase(),tags=p.tags.map(t=>t.toLowerCase()),name=p.name.toLowerCase(),bio=p.bio.toLowerCase();if(primary===qq)rank+=200;else if(primary.includes(qq))rank+=150;if(tags.some(t=>t===qq))rank+=100;else if(tags.some(t=>t.includes(qq)))rank+=75;if(name.includes(qq))rank+=60;if(bio.includes(qq))rank+=20;return rank||-1}
 function renderDirectory(){app.innerHTML=`<section class="hero wrap"><div><div class="eyebrow">RED PROFESIONAL AUDIOVISUAL · CÓRDOBA</div><h1>Encontrá a quienes<br><span>hacen posible cada proyecto.</span></h1><p>Buscá por rol principal, otros oficios, herramientas o habilidades. El rol principal siempre tiene prioridad en los resultados.</p></div><aside class="hero-brand-panel"><img src="assets/rr-logo.svg" alt="Red de Realizadores"><div class="cc"><span>UNA INICIATIVA DE</span><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"></div></aside></section><section class="search-panel wrap"><div class="search-line"><label>BUSCAR POR NOMBRE, ROL, HERRAMIENTA O PALABRA CLAVE</label><input id="searchInput" placeholder="Ej: dirección, guion, Blender, DaVinci, sonido…"></div><div class="filter-row"><select id="roleFilter"><option value="">Todos los roles</option>${roles.map(r=>`<option>${r}</option>`).join("")}</select><label class="check"><input id="availableFilter" type="checkbox"> Disponible ahora</label><label class="check"><input id="studentFilter" type="checkbox"> Acepta estudiantiles</label><label class="check"><input id="verifiedFilter" type="checkbox"> Solo verificados</label><select id="sortFilter"><option value="relevance">Orden: relevancia</option><option value="recommendations">Más recomendados</option><option value="recent">Actualizados recientemente</option><option value="name">Nombre A–Z</option></select><button id="clearFilters" class="clear-btn">Limpiar filtros</button></div></section><section class="directory wrap"><div class="section-head"><div><strong id="resultCount">0</strong> perfiles encontrados</div><button id="createProfile" class="gold-btn">Crear / editar mi perfil</button></div><div id="cards" class="cards"></div></section><section class="info-strip"><div class="wrap strip-grid"><div><span>01</span><strong>Un perfil claro</strong><p>Un rol principal y hasta cinco etiquetas útiles, sin spam.</p></div><div><span>02</span><strong>Reel o guion</strong><p>Video embebido; los guionistas principales pueden mostrar PDF.</p></div><div><span>03</span><strong>Recomendaciones</strong><p>Una recomendación por usuario, siempre vinculada a un proyecto.</p></div><div><span>04</span><strong>Perfiles verificados</strong><p>Distinción administrada por Córdoba Casting para trayectoria acreditada.</p></div></div></section>`;bindDirectory()}
 function bindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0&&!av.checked||false);arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>new Date(b.p.updatedAt||0)-new Date(a.p.updatedAt||0));else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>profileModal(x.dataset.profile))};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>realState.user?realAccountModal():realAuthModal("register");draw()}
@@ -249,12 +250,311 @@ function contactModal(p){
       <p><small>Todavía no definimos si el envío final será por email, WhatsApp o ambos.</small></p>`);
   };
 }
-function renderJobs(){app.innerHTML=`<section class="jobs-hero wrap"><div class="eyebrow">BÚSQUEDAS / PROYECTOS</div><h1 class="page-title">Encontrá equipo.<br>Sumate a proyectos.</h1><p class="lead">Publicaciones activas por hasta 10 días. Participás directamente con tu perfil profesional.</p></section><section class="jobs-controls wrap"><div class="job-filters"><label class="check"><input id="jobStudentFilter" type="checkbox"> Estudiantiles</label><label class="check"><input id="jobPaidFilter" type="checkbox"> Remunerados</label></div><button id="newJobBtn" class="gold-btn">+ Publicar búsqueda</button></section><section class="jobs wrap"><div id="jobGrid" class="job-grid"></div></section>`;const js=document.getElementById("jobStudentFilter"),jp=document.getElementById("jobPaidFilter");const draw=()=>{const arr=jobs.filter(j=>(!js.checked||j.student)&&(!jp.checked||j.paid));document.getElementById("jobGrid").innerHTML=arr.map(jobCard).join("");document.querySelectorAll("[data-job]").forEach(x=>x.onclick=()=>jobModal(+x.dataset.job))};js.onchange=jp.onchange=draw;document.getElementById("newJobBtn").onclick=newJobModal;draw()}
-function jobCard(j){return`<article class="job-card" data-job="${j.id}"><div class="job-meta"><span>BÚSQUEDA / ${String(j.id).padStart(3,"0")}</span><span>CADUCA EN ${j.days} DÍAS</span></div><h3>${esc(j.title)}</h3><p>${esc(j.description)}</p><div class="role-tags">${j.roles.map(r=>`<span class="tag">${esc(r)}</span>`).join("")}</div><div class="category-tags">${j.student?'<span class="tag red">ESTUDIANTIL</span>':''}${j.paid?'<span class="tag gold">REMUNERADO</span>':'<span class="tag">NO INDICA REMUNERACIÓN</span>'}</div><div class="job-bottom"><span>Publicado por <strong>${esc(j.author)}</strong></span><span>${j.participants.length} interesados</span></div></article>`}
-function jobModal(id){const j=jobs.find(x=>x.id===id);openModal(`<div class="eyebrow">BÚSQUEDA / ${String(j.id).padStart(3,"0")}</div><h2>${esc(j.title)}</h2><div class="category-tags">${j.student?'<span class="tag red" style="color:#8e2732;border-color:#b78e94">PROYECTO ESTUDIANTIL</span>':''}${j.paid?'<span class="tag gold" style="color:#7b651f;border-color:#baa55e">REMUNERADO</span>':'<span class="tag" style="color:#59666c;border-color:#bbb">NO INDICA REMUNERACIÓN</span>'}</div><div class="profile-section"><h4>Roles buscados</h4><div class="role-tags">${j.roles.map(r=>`<span class="pill on" style="color:#6d5a19;border-color:#c5ae62">${esc(r)}</span>`).join("")}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(j.description)}</p></div><div class="profile-section"><h4>Publicación</h4><p>Publicó <strong>${esc(j.author)}</strong> · caduca en <strong>${j.days} días</strong>.</p><button id="participateBtn" class="primary gold">Participar con mi perfil</button></div><div class="profile-section"><h4>Perfiles interesados</h4><div class="participants">${j.participants.map(id=>participantHtml(profiles.find(p=>p.id===id))).join("")}</div></div>`,true);document.getElementById("participateBtn").onclick=()=>participate(j);document.querySelectorAll("[data-reel-profile]").forEach(b=>b.onclick=e=>{e.stopPropagation();profileModal(b.dataset.reelProfile)})}
-function participantHtml(p){if(!p)return`<div class="participant"><strong>Perfil registrado</strong><span>Realizador de la red</span></div>`;return`<div class="participant"><strong>${esc(p.name)} ${p.verified?verifiedBadge(false):""}</strong><span>${esc(p.primary)}</span><button data-reel-profile="${p.id}">${p.primary==="Guion"?"Ver material":"▶ Ver reel"}</button></div>`}
-function participate(j){if(!realState.user){realAuthModal("login");return}const uid=realState.user?.id||state.currentUserId;if(!j.participants.some(x=>String(x)===String(uid)))j.participants.push(uid);jobModal(j.id)}
-function newJobModal(){if(!realState.user){realAuthModal("login");return}openModal(`<div class="eyebrow">PUBLICAR BÚSQUEDA</div><h2>Nueva búsqueda</h2><form id="jobForm" class="form-grid"><label>Título<input id="jobTitle" required maxlength="80" placeholder="Ej: Buscamos DF para cortometraje"></label><div class="field"><label>¿Qué roles buscás? <small>(máximo 3)</small></label><div class="role-checks" id="roleChecks">${roles.map(r=>`<label><input type="checkbox" value="${esc(r)}"> ${esc(r)}</label>`).join("")}</div><div id="roleLimit" class="char-count">0 / 3 roles</div></div><label>Descripción<textarea id="jobDescription" maxlength="800" required></textarea><span id="jobDescCount" class="char-count">0 / 800</span></label><label>Caducidad<select id="jobExpiry">${Array.from({length:10},(_,i)=>`<option value="${i+1}" ${i===6?"selected":""}>${i+1} día${i?"s":""}</option>`).join("")}</select></label><div class="field"><label>Categorías</label><div class="modal-checks"><label class="check"><input id="newStudent" type="checkbox"> Proyecto estudiantil</label><label class="check"><input id="newPaid" type="checkbox"> Remunerado</label></div></div><button class="primary gold">Publicar búsqueda</button></form>`);const checks=[...document.querySelectorAll("#roleChecks input")],limit=document.getElementById("roleLimit");checks.forEach(c=>c.onchange=()=>{const selected=checks.filter(x=>x.checked);if(selected.length>3)c.checked=false;limit.textContent=`${checks.filter(x=>x.checked).length} / 3 roles`});const ta=document.getElementById("jobDescription");ta.oninput=()=>document.getElementById("jobDescCount").textContent=`${ta.value.length} / 800`;document.getElementById("jobForm").onsubmit=e=>{e.preventDefault();const selected=checks.filter(x=>x.checked).map(x=>x.value);if(!selected.length){limit.textContent="Elegí al menos 1 rol";return}jobs.unshift({id:Math.max(...jobs.map(j=>j.id))+1,title:document.getElementById("jobTitle").value,roles:selected,description:ta.value,student:document.getElementById("newStudent").checked,paid:document.getElementById("newPaid").checked,days:+document.getElementById("jobExpiry").value,author:(realState.profile?.full_name||"Realizador"),participants:[]});closeModal();location.hash="#busquedas";renderJobs()}}
+
+let realJobsCache=[];
+
+function remainingLabel(expiresAt){
+  const ms=new Date(expiresAt)-new Date();
+  if(ms<=0)return "EXPIRADA";
+  const mins=Math.max(1,Math.floor(ms/60000));
+  if(mins>=1440){
+    const d=Math.floor(mins/1440);
+    return `${d} día${d===1?"":"s"}`;
+  }
+  if(mins>=60){
+    const h=Math.floor(mins/60);
+    return `${h} hora${h===1?"":"s"}`;
+  }
+  return `${mins} minuto${mins===1?"":"s"}`;
+}
+
+async function loadRealJobs(){
+  const nowIso=new Date().toISOString();
+
+  const {data,error}=await sb
+    .from("job_posts")
+    .select("*")
+    .gt("expires_at",nowIso)
+    .order("created_at",{ascending:false});
+
+  if(error){
+    console.error("job_posts",error);
+    realJobsCache=[];
+    return error;
+  }
+
+  const rows=data||[];
+  const jobIds=rows.map(x=>x.id);
+  const authorIds=[...new Set(rows.map(x=>x.author_id))];
+
+  let authors=[],jobRoles=[];
+  if(authorIds.length){
+    const r=await sb.from("profiles").select("id,full_name").in("id",authorIds);
+    if(r.error)console.error("job authors",r.error);
+    authors=r.data||[];
+  }
+  if(jobIds.length){
+    const r=await sb.from("job_post_roles").select("job_post_id,role_id").in("job_post_id",jobIds);
+    if(r.error)console.error("job roles",r.error);
+    jobRoles=r.data||[];
+  }
+
+  const authorMap=new Map(authors.map(x=>[x.id,x.full_name]));
+  const roleMap=new Map(realState.roles.map(x=>[Number(x.id),x.name]));
+
+  realJobsCache=rows.map(j=>({
+    id:j.id,
+    authorId:j.author_id,
+    author:authorMap.get(j.author_id)||"Realizador",
+    title:j.title,
+    description:j.description,
+    student:Boolean(j.is_student_project),
+    paid:Boolean(j.is_paid),
+    createdAt:j.created_at,
+    expiresAt:j.expires_at,
+    remainingText:remainingLabel(j.expires_at),
+    roles:jobRoles
+      .filter(r=>Number(r.job_post_id)===Number(j.id))
+      .map(r=>roleMap.get(Number(r.role_id)))
+      .filter(Boolean)
+  }));
+
+  return null;
+}
+async function renderJobs(){
+  app.innerHTML=`<section class="jobs-hero wrap">
+    <div class="eyebrow">BÚSQUEDAS / PROYECTOS</div>
+    <h1 class="page-title">Encontrá equipo.<br>Sumate a proyectos.</h1>
+    <p class="lead">Publicaciones activas por hasta 10 días. Participás directamente con tu perfil profesional.</p>
+  </section>
+  <section class="jobs-controls wrap">
+    <div class="job-filters">
+      <label class="check"><input id="jobStudentFilter" type="checkbox"> Estudiantiles</label>
+      <label class="check"><input id="jobPaidFilter" type="checkbox"> Remunerados</label>
+    </div>
+    <button id="newJobBtn" class="gold-btn">+ Publicar búsqueda</button>
+  </section>
+  <section class="jobs wrap">
+    <div id="jobGrid" class="job-grid"><div class="notice">Cargando búsquedas…</div></div>
+  </section>`;
+
+  const student=document.getElementById("jobStudentFilter");
+  const paid=document.getElementById("jobPaidFilter");
+
+  const error=await loadRealJobs();
+  if(error){
+    document.getElementById("jobGrid").innerHTML=`<div class="notice">${esc(error.message)}</div>`;
+    return;
+  }
+
+  const draw=()=>{
+    const arr=realJobsCache.filter(j=>(!student.checked||j.student)&&(!paid.checked||j.paid));
+    document.getElementById("jobGrid").innerHTML=arr.length?arr.map(realJobCard).join(""):`<div class="notice">No hay búsquedas activas con esos filtros.</div>`;
+    document.querySelectorAll("[data-real-job]").forEach(x=>x.onclick=()=>realJobModal(Number(x.dataset.realJob)));
+  };
+
+  student.onchange=paid.onchange=draw;
+  document.getElementById("newJobBtn").onclick=newRealJobModal;
+  draw();
+}
+
+function realJobCard(j){
+  return `<article class="job-card" data-real-job="${j.id}">
+    <div class="job-meta">
+      <span>BÚSQUEDA</span>
+      <span>CADUCA EN ${esc(j.remainingText).toUpperCase()}</span>
+    </div>
+    <h3>${esc(j.title)}</h3>
+    <p>${esc(j.description)}</p>
+    <div class="role-tags">${j.roles.map(r=>`<span class="tag">${esc(r)}</span>`).join("")}</div>
+    <div class="category-tags">
+      ${j.student?'<span class="tag red">ESTUDIANTIL</span>':""}
+      ${j.paid?'<span class="tag gold">REMUNERADO</span>':'<span class="tag">NO INDICA REMUNERACIÓN</span>'}
+    </div>
+    <div class="job-bottom">
+      <span>Publicado por <strong>${esc(j.author)}</strong></span>
+      <span>${esc(j.remainingText)} restantes</span>
+    </div>
+  </article>`;
+}
+
+async function realJobModal(id){
+  const j=realJobsCache.find(x=>Number(x.id)===Number(id));
+  if(!j)return;
+
+  let ownApplication=null;
+  if(realState.user){
+    const r=await sb.from("job_applications")
+      .select("id,is_visible")
+      .eq("job_post_id",id)
+      .eq("applicant_id",realState.user.id)
+      .maybeSingle();
+    ownApplication=r.data||null;
+  }
+
+  const isAuthor=String(j.authorId)===String(realState.user?.id);
+  let applications=[];
+
+  if(isAuthor || realState.isAdmin){
+    const ar=await sb.from("job_applications")
+      .select("id,applicant_id,created_at,is_visible")
+      .eq("job_post_id",id)
+      .order("created_at",{ascending:false});
+    applications=ar.data||[];
+  }
+
+  let applicantProfiles=[];
+  const applicantIds=[...new Set(applications.map(a=>a.applicant_id))];
+  if(applicantIds.length){
+    const pr=await sb.from("profiles")
+      .select("id,full_name,primary_role_id,verified,reel_url,script_pdf_path,roles:primary_role_id(name)")
+      .in("id",applicantIds);
+    applicantProfiles=pr.data||[];
+  }
+  const pmap=new Map(applicantProfiles.map(p=>[p.id,p]));
+
+  openModal(`<div class="eyebrow">BÚSQUEDA ACTIVA</div>
+    <h2>${esc(j.title)}</h2>
+    <div class="category-tags">
+      ${j.student?'<span class="tag red" style="color:#8e2732;border-color:#b78e94">PROYECTO ESTUDIANTIL</span>':""}
+      ${j.paid?'<span class="tag gold" style="color:#7b651f;border-color:#baa55e">REMUNERADO</span>':'<span class="tag" style="color:#59666c;border-color:#bbb">NO INDICA REMUNERACIÓN</span>'}
+    </div>
+    <div class="profile-section">
+      <h4>Roles buscados</h4>
+      <div class="role-tags">${j.roles.map(r=>`<span class="pill on" style="color:#6d5a19;border-color:#c5ae62">${esc(r)}</span>`).join("")}</div>
+    </div>
+    <div class="profile-section"><h4>Descripción</h4><p>${esc(j.description)}</p></div>
+    <div class="profile-section">
+      <h4>Publicación</h4>
+      <p>Publicó <strong>${esc(j.author)}</strong> · quedan <strong>${esc(j.remainingText)}</strong>.</p>
+      ${!isAuthor?`<button id="realParticipateBtn" class="primary gold">${ownApplication?"✓ Ya participás":"Participar con mi perfil"}</button>`:"<div class='notice'>Esta búsqueda fue publicada por vos.</div>"}
+    </div>
+    ${isAuthor||realState.isAdmin?`<div class="profile-section">
+      <h4>Perfiles interesados</h4>
+      <div class="participants">
+        ${applications.length?applications.map(a=>realApplicantHtml(a,pmap.get(a.applicant_id))).join(""):"<p>Todavía no hay postulaciones.</p>"}
+      </div>
+    </div>`:""}`,true);
+
+  const btn=document.getElementById("realParticipateBtn");
+  if(btn){
+    btn.onclick=()=>ownApplication?removeRealApplication(ownApplication.id,id):createRealApplication(id);
+  }
+  document.querySelectorAll("[data-applicant-profile]").forEach(b=>b.onclick=()=>profileModal(b.dataset.applicantProfile));
+}
+
+function realApplicantHtml(a,p){
+  if(!p)return "";
+  const role=p.roles?.name||"Sin rol";
+  return `<div class="participant">
+    <strong>${esc(p.full_name||"Realizador")} ${p.verified?verifiedBadge(false):""}</strong>
+    <span>${esc(role)}</span>
+    <button data-applicant-profile="${p.id}">${role==="Guion"?"Ver material":"▶ Ver reel / perfil"}</button>
+  </div>`;
+}
+
+async function createRealApplication(jobId){
+  if(!realState.user){realAuthModal("login");return}
+  if(realState.profile?.status!=="approved"){
+    alert("Tu perfil debe estar aprobado por Córdoba Casting para participar en búsquedas.");
+    return;
+  }
+  const {error}=await sb.from("job_applications").insert({
+    job_post_id:jobId,
+    applicant_id:realState.user.id
+  });
+  if(error){alert(error.message);return}
+  await realJobModal(jobId);
+}
+
+async function removeRealApplication(applicationId,jobId){
+  if(!confirm("¿Querés retirar tu participación de esta búsqueda?"))return;
+  const {error}=await sb.from("job_applications").delete().eq("id",applicationId);
+  if(error){alert(error.message);return}
+  await realJobModal(jobId);
+}
+
+function newRealJobModal(){
+  if(!realState.user){realAuthModal("login");return}
+  if(realState.profile?.status!=="approved"){
+    openModal(`<div class="eyebrow">PUBLICAR BÚSQUEDA</div><h2>Tu perfil todavía no puede publicar</h2><p>Para publicar búsquedas, tu perfil primero debe estar aprobado por Córdoba Casting.</p>`);
+    return;
+  }
+
+  openModal(`<div class="eyebrow">PUBLICAR BÚSQUEDA</div>
+    <h2>Nueva búsqueda</h2>
+    <form id="realJobForm" class="form-grid">
+      <label>Título<input id="realJobTitle" required maxlength="120" placeholder="Ej: Buscamos DF para cortometraje"></label>
+      <div class="field">
+        <label>¿Qué roles buscás? <small>(máximo 3)</small></label>
+        <div class="role-checks" id="realRoleChecks">
+          ${realState.roles.map(r=>`<label><input type="checkbox" value="${r.id}"> ${esc(r.name)}</label>`).join("")}
+        </div>
+        <div id="realRoleLimit" class="char-count">0 / 3 roles</div>
+      </div>
+      <label>Descripción<textarea id="realJobDescription" maxlength="800" required></textarea><span id="realJobDescCount" class="char-count">0 / 800</span></label>
+      <label>Caducidad<select id="realJobExpiry">${Array.from({length:10},(_,i)=>`<option value="${i+1}" ${i===6?"selected":""}>${i+1} día${i?"s":""}</option>`).join("")}</select></label>
+      <div class="field">
+        <label>Categorías</label>
+        <div class="modal-checks">
+          <label class="check"><input id="realNewStudent" type="checkbox"> Proyecto estudiantil</label>
+          <label class="check"><input id="realNewPaid" type="checkbox"> Remunerado</label>
+        </div>
+      </div>
+      <button class="primary gold">Publicar búsqueda</button>
+      <div id="realJobFeedback"></div>
+    </form>`);
+
+  const checks=[...document.querySelectorAll("#realRoleChecks input")];
+  const limit=document.getElementById("realRoleLimit");
+  checks.forEach(c=>c.onchange=()=>{
+    const selected=checks.filter(x=>x.checked);
+    if(selected.length>3)c.checked=false;
+    limit.textContent=`${checks.filter(x=>x.checked).length} / 3 roles`;
+  });
+
+  const ta=document.getElementById("realJobDescription");
+  ta.oninput=()=>document.getElementById("realJobDescCount").textContent=`${ta.value.length} / 800`;
+
+  document.getElementById("realJobForm").onsubmit=async e=>{
+    e.preventDefault();
+    const selected=checks.filter(x=>x.checked).map(x=>Number(x.value));
+    if(!selected.length){limit.textContent="Elegí al menos 1 rol";return}
+
+    const feedback=document.getElementById("realJobFeedback");
+    feedback.innerHTML=authNotice("Publicando…");
+
+    const days=Number(document.getElementById("realJobExpiry").value);
+    const expires=new Date(Date.now()+days*86400000).toISOString();
+
+    const {data:created,error}=await sb.from("job_posts").insert({
+      author_id:realState.user.id,
+      title:document.getElementById("realJobTitle").value.trim(),
+      description:ta.value.trim(),
+      is_student_project:document.getElementById("realNewStudent").checked,
+      is_paid:document.getElementById("realNewPaid").checked,
+      expires_at:expires
+    }).select("id").single();
+
+    if(error){feedback.innerHTML=authNotice(error.message);return}
+
+    const {error:rolesError}=await sb.from("job_post_roles").insert(
+      selected.map(role_id=>({job_post_id:created.id,role_id}))
+    );
+
+    if(rolesError){
+      await sb.from("job_posts").delete().eq("id",created.id);
+      feedback.innerHTML=authNotice(rolesError.message);
+      return;
+    }
+
+    await loadRealJobs();
+    closeModal();
+    location.hash="#busquedas";
+    await renderJobs();
+  };
+}
+
 function renderResources(){app.innerHTML=`<section class="simple-page narrow"><div class="eyebrow">RECURSOS / RR</div><h1 class="page-title">Material útil<br>para realizar.</h1><p class="lead">Una biblioteca práctica para preproducción, rodaje y trabajo colaborativo.</p><div class="resource-grid"><article><span>01</span><h3>Checklist de rodaje</h3><p>Equipo, permisos, continuidad y necesidades antes de filmar.</p><button class="text-btn">Ver recurso →</button></article><article><span>02</span><h3>Plan de rodaje</h3><p>Modelo base para organizar jornadas, escenas y necesidades técnicas.</p><button class="text-btn">Ver recurso →</button></article><article><span>03</span><h3>Guía de casting</h3><p>Cómo armar una convocatoria clara y profesional.</p><button class="text-btn">Ver recurso →</button></article><article><span>04</span><h3>Breakdown de guion</h3><p>Plantilla inicial para desglosar necesidades por escena.</p><button class="text-btn">Ver recurso →</button></article></div></section>`}
 function renderTraining(){app.innerHTML=`<section class="training"><div class="training-shell"><div class="training-brand"><div><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"><h1 class="page-title">Formación<br>audiovisual.</h1><p>Cursos, talleres y experiencias para seguir formando profesionales frente y detrás de cámara.</p></div><small>FORMACIÓN AUDIOVISUAL · CÓRDOBA</small></div><div class="training-content"><div class="eyebrow">FORMACIÓN · CÓRDOBA CASTING</div><h2>Nuestras Propuestas</h2><p>Formación para seguir desarrollando herramientas, ampliar tu práctica y crecer dentro de la industria audiovisual.</p><div class="course-list"><article class="course"><div><span class="course-tag">CURSO</span><h3>Dirección actoral para cámara</h3><p>Herramientas prácticas para dirigir intérpretes y escenas audiovisuales.</p></div><button class="outline">Más información</button></article><article class="course"><div><span class="course-tag">TALLER</span><h3>Taller de escenas</h3><p>Ensayo, práctica frente a cámara y filmación de material.</p></div><button class="outline">Más información</button></article></div></div></div></section>`}
 function demoAccountModal(tab="login",afterLogin=null){openModal(`<div class="eyebrow">MI CUENTA</div><h2>${state.loggedIn?"Cuenta y perfil":"Ingresar a la red"}</h2>${state.loggedIn?`<div class="account-tabs"><button class="active">Mi perfil</button><button id="passwordTab">Contraseña</button></div><div id="accountPanel">${demoProfileEditHtml()}</div>`:`<div class="notice">Prototipo: usá el acceso demo para probar edición, recomendaciones, búsquedas y postulaciones.</div><form id="loginForm" class="form-grid" style="margin-top:16px"><label>Email<input type="email" value="demo@redrealizadores.com"></label><label>Contraseña<input type="password" value="demo123"></label><button class="primary gold">Ingresar demo</button></form><button id="adminAccessBtn" class="outline" style="margin-top:10px">Acceso administrador demo</button>`}`);if(!state.loggedIn){document.getElementById("adminAccessBtn").onclick=demoAdminPanel;document.getElementById("loginForm").onsubmit=e=>{e.preventDefault();state.loggedIn=true;accountBtn.textContent="Mi cuenta";closeModal();if(afterLogin)afterLogin()}}else{document.getElementById("passwordTab").onclick=demoPasswordPanel;demoBindProfileEdit()}}
@@ -369,8 +669,13 @@ async function loadRealAccount(){
 }
 
 function updateRealAccountButton(){
-  if(!realState.user){accountBtn.textContent="Ingresar";return}
-  accountBtn.textContent=realState.isAdmin?"Administrar":"Mi cuenta";
+  if(!realState.user){
+    accountBtn.textContent="Ingresar";
+    if(adminNavLink)adminNavLink.hidden=true;
+    return;
+  }
+  accountBtn.textContent="Mi cuenta";
+  if(adminNavLink)adminNavLink.hidden=!realState.isAdmin;
 }
 
 function authNotice(message,type=""){
@@ -379,8 +684,7 @@ function authNotice(message,type=""){
 
 function realAccountModal(){
   if(!realState.user){return realAuthModal("login")}
-  if(realState.isAdmin){return realAdminPanel()}
-  if(realState.profile?.status==="rejected"){return rejectedProfileModal()}
+  if(realState.profile?.status==="rejected" && !realState.isAdmin){return rejectedProfileModal()}
   return realProfileModal();
 }
 
@@ -652,10 +956,309 @@ async function realLogout(){
   closeModal();
 }
 
+
+async function renderAdministration(){
+  if(!realState.user){
+    realAuthModal("login");
+    location.hash="#realizadores";
+    return;
+  }
+  if(!realState.isAdmin){
+    app.innerHTML=`<section class="wrap admin-page"><div class="eyebrow">ADMINISTRACIÓN</div><h1 class="page-title">Acceso restringido.</h1><p>Esta sección solamente está disponible para administradores de Córdoba Casting.</p></section>`;
+    return;
+  }
+
+  app.innerHTML=`<section class="wrap admin-page">
+    <div class="admin-page-head">
+      <div>
+        <div class="eyebrow">CÓRDOBA CASTING / ADMINISTRACIÓN</div>
+        <h1 class="page-title">Panel de administración.</h1>
+        <p>Gestioná perfiles, búsquedas y postulaciones desde un único lugar.</p>
+      </div>
+    </div>
+
+    <div class="admin-page-tabs">
+      <button data-admin-section="profiles" class="active">Perfiles</button>
+      <button data-admin-section="jobs">Búsquedas</button>
+      <button data-admin-section="applications">Postulaciones</button>
+    </div>
+
+    <div id="adminPageContent" class="admin-page-content"></div>
+  </section>`;
+
+  document.querySelectorAll("[data-admin-section]").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("[data-admin-section]").forEach(x=>x.classList.toggle("active",x===b));
+    if(b.dataset.adminSection==="profiles")renderAdminProfilesSection("pending");
+    if(b.dataset.adminSection==="jobs")renderAdminJobsSection();
+    if(b.dataset.adminSection==="applications")renderAdminApplicationsSection();
+  });
+
+  await renderAdminProfilesSection("pending");
+}
+
+async function renderAdminProfilesSection(filter="pending"){
+  const content=document.getElementById("adminPageContent");
+  if(!content)return;
+  content.innerHTML=`<div class="admin-subtoolbar">
+    <button data-admin-profile-filter="pending" ${filter==="pending"?'class="active"':""}>Pendientes</button>
+    <button data-admin-profile-filter="approved" ${filter==="approved"?'class="active"':""}>Publicados</button>
+    <button data-admin-profile-filter="rejected" ${filter==="rejected"?'class="active"':""}>Rechazados</button>
+    <button data-admin-profile-filter="all" ${filter==="all"?'class="active"':""}>Todos</button>
+  </div><div id="adminProfilesList">${authNotice("Cargando perfiles…")}</div>`;
+
+  document.querySelectorAll("[data-admin-profile-filter]").forEach(b=>b.onclick=()=>renderAdminProfilesSection(b.dataset.adminProfileFilter));
+
+  let query=sb.from("profiles")
+    .select("*, roles:primary_role_id(name), profile_moderation(rejection_reason,submitted_at,reviewed_at), profile_tags(tag)")
+    .order("created_at",{ascending:false});
+
+  if(filter!=="all")query=query.eq("status",filter);
+
+  const {data,error}=await query;
+  const list=document.getElementById("adminProfilesList");
+  if(error){list.innerHTML=authNotice(error.message);return}
+
+  list.innerHTML=(data||[]).map(p=>`<div class="admin-row">
+    <div>
+      <h4>${esc(p.full_name||"(Sin nombre)")} ${p.verified?verifiedBadge(false):""}</h4>
+      <div class="secondary">${esc(p.roles?.name||"Sin rol")} · ${(p.profile_tags||[]).map(t=>esc(t.tag)).join(" · ")}</div>
+      <small>Estado: ${String(p.status).toUpperCase()} · ${p.is_visible?"VISIBLE":"OCULTO"}${p.profile_moderation?.[0]?.rejection_reason?` · ${esc(p.profile_moderation[0].rejection_reason)}`:""}</small>
+    </div>
+    <div class="admin-actions">
+      <button data-ap-view="${p.id}">Ver completo</button>
+      ${p.status!=="approved"?`<button data-ap-approve="${p.id}">Aprobar</button><button data-ap-approveverify="${p.id}">Aprobar + verificar</button>`:""}
+      ${p.status!=="rejected"?`<button data-ap-reject="${p.id}">Rechazar</button>`:""}
+      ${p.status==="approved"?`<button data-ap-verify="${p.id}" data-value="${p.verified?"false":"true"}">${p.verified?"Quitar verificación":"Verificar"}</button><button data-ap-visible="${p.id}" data-value="${p.is_visible?"false":"true"}">${p.is_visible?"Ocultar":"Mostrar"}</button>`:""}
+    </div>
+  </div>`).join("")||"<p>No hay perfiles en esta categoría.</p>";
+
+  document.querySelectorAll("[data-ap-view]").forEach(b=>b.onclick=()=>realAdminPreview(b.dataset.apView));
+  document.querySelectorAll("[data-ap-approve]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.apApprove,make_verified:false});
+    if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();renderAdminProfilesSection(filter)}
+  });
+  document.querySelectorAll("[data-ap-approveverify]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.apApproveverify,make_verified:true});
+    if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();renderAdminProfilesSection(filter)}
+  });
+  document.querySelectorAll("[data-ap-reject]").forEach(b=>b.onclick=async()=>{
+    const reason=prompt("Motivo del rechazo (se mostrará claramente en la cuenta del usuario):");
+    if(!reason)return;
+    const {error}=await sb.rpc("admin_reject_profile",{target_profile:b.dataset.apReject,reason});
+    if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();renderAdminProfilesSection(filter)}
+  });
+  document.querySelectorAll("[data-ap-verify]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.rpc("admin_set_verified",{target_profile:b.dataset.apVerify,value:b.dataset.value==="true"});
+    if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();renderAdminProfilesSection(filter)}
+  });
+  document.querySelectorAll("[data-ap-visible]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.rpc("admin_set_visibility",{target_profile:b.dataset.apVisible,value:b.dataset.value==="true"});
+    if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();renderAdminProfilesSection(filter)}
+  });
+}
+
+async function renderAdminJobsSection(){
+  const content=document.getElementById("adminPageContent");
+  if(!content)return;
+  content.innerHTML=authNotice("Cargando búsquedas…");
+
+  const {data,error}=await sb.from("job_posts").select("*").order("created_at",{ascending:false});
+  if(error){content.innerHTML=authNotice(error.message);return}
+
+  const rows=data||[];
+  const jobIds=rows.map(j=>j.id);
+  const authorIds=[...new Set(rows.map(j=>j.author_id))];
+
+  let rolesData=[],authorsData=[];
+  if(jobIds.length){
+    const r=await sb.from("job_post_roles").select("job_post_id,role_id").in("job_post_id",jobIds);
+    rolesData=r.data||[];
+  }
+  if(authorIds.length){
+    const r=await sb.from("profiles").select("id,full_name").in("id",authorIds);
+    authorsData=r.data||[];
+  }
+
+  const rmap=new Map(realState.roles.map(r=>[Number(r.id),r.name]));
+  const amap=new Map(authorsData.map(a=>[a.id,a.full_name]));
+
+  content.innerHTML=`<div class="admin-section-intro"><strong>${rows.length}</strong> búsquedas totales · activas y expiradas.</div>
+    <div class="admin-list">${rows.map(j=>{
+      const active=new Date(j.expires_at)>new Date();
+      const roles=rolesData.filter(r=>Number(r.job_post_id)===Number(j.id)).map(r=>rmap.get(Number(r.role_id))).filter(Boolean);
+      return `<div class="admin-row">
+        <div>
+          <h4>${esc(j.title)}</h4>
+          <div class="secondary">${roles.map(esc).join(" · ")}</div>
+          <small>${active?`ACTIVA · ${esc(remainingLabel(j.expires_at))} restantes`:"EXPIRADA"} · por ${esc(amap.get(j.author_id)||"Realizador")} · ${j.is_student_project?"ESTUDIANTIL":"NO ESTUDIANTIL"} · ${j.is_paid?"REMUNERADA":"NO INDICA REMUNERACIÓN"}</small>
+        </div>
+        <div class="admin-actions">
+          <button data-aj-view="${j.id}">Ver</button>
+          <button data-aj-edit="${j.id}">Editar</button>
+          <button class="danger" data-aj-delete="${j.id}">Eliminar</button>
+        </div>
+      </div>`;
+    }).join("")||"<p>No hay búsquedas.</p>"}</div>`;
+
+  document.querySelectorAll("[data-aj-view]").forEach(b=>b.onclick=()=>adminViewJobModal(Number(b.dataset.ajView)));
+  document.querySelectorAll("[data-aj-edit]").forEach(b=>b.onclick=()=>adminEditJobModal(Number(b.dataset.ajEdit)));
+  document.querySelectorAll("[data-aj-delete]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("¿Eliminar definitivamente esta búsqueda y sus postulaciones?"))return;
+    const {error}=await sb.from("job_posts").delete().eq("id",Number(b.dataset.ajDelete));
+    if(error)alert(error.message);else {await loadRealJobs();renderAdminJobsSection()}
+  });
+}
+
+async function getAdminJobBundle(id){
+  const [job,roles]=await Promise.all([
+    sb.from("job_posts").select("*").eq("id",id).single(),
+    sb.from("job_post_roles").select("role_id").eq("job_post_id",id)
+  ]);
+  if(job.error)throw job.error;
+  if(roles.error)throw roles.error;
+  return {job:job.data,roleIds:(roles.data||[]).map(x=>Number(x.role_id))};
+}
+
+async function adminViewJobModal(id){
+  try{
+    const {job,roleIds}=await getAdminJobBundle(id);
+    const roleNames=roleIds.map(x=>realState.roles.find(r=>Number(r.id)===x)?.name).filter(Boolean);
+    const active=new Date(job.expires_at)>new Date();
+    openModal(`<div class="eyebrow">ADMIN / BÚSQUEDA</div>
+      <h2>${esc(job.title)}</h2>
+      <div class="category-tags">${job.is_student_project?'<span class="tag red">ESTUDIANTIL</span>':""}${job.is_paid?'<span class="tag gold">REMUNERADA</span>':'<span class="tag">NO INDICA REMUNERACIÓN</span>'}</div>
+      <div class="profile-section"><h4>Roles</h4><div class="role-tags">${roleNames.map(r=>`<span class="pill on">${esc(r)}</span>`).join("")}</div></div>
+      <div class="profile-section"><h4>Descripción</h4><p>${esc(job.description)}</p></div>
+      <div class="profile-section"><h4>Estado</h4><p><strong>${active?"ACTIVA":"EXPIRADA"}</strong>${active?` · ${esc(remainingLabel(job.expires_at))} restantes`:""}</p></div>
+      <div class="profile-actions"><button id="adminEditThisJob" class="primary gold">Editar búsqueda</button></div>`,true);
+    document.getElementById("adminEditThisJob").onclick=()=>adminEditJobModal(id);
+  }catch(e){alert(e.message)}
+}
+
+async function adminEditJobModal(id){
+  try{
+    const {job,roleIds}=await getAdminJobBundle(id);
+    openModal(`<div class="eyebrow">ADMIN / EDITAR BÚSQUEDA</div>
+      <h2>Editar búsqueda</h2>
+      <form id="adminJobEditForm" class="form-grid">
+        <label>Título<input id="adminJobTitle" maxlength="120" required value="${esc(job.title)}"></label>
+        <div class="field">
+          <label>Roles buscados <small>(máximo 3)</small></label>
+          <div class="role-checks" id="adminJobRoleChecks">${realState.roles.map(r=>`<label><input type="checkbox" value="${r.id}" ${roleIds.includes(Number(r.id))?"checked":""}> ${esc(r.name)}</label>`).join("")}</div>
+          <div id="adminJobRoleCount" class="char-count">${roleIds.length} / 3 roles</div>
+        </div>
+        <label>Descripción<textarea id="adminJobDescription" maxlength="800" required>${esc(job.description)}</textarea></label>
+        <label>Vigencia desde ahora<select id="adminJobExpiry">${Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1} día${i?"s":""}</option>`).join("")}</select><span class="char-count">Al guardar, la fecha de expiración se recalcula desde ahora.</span></label>
+        <div class="modal-checks">
+          <label class="check"><input id="adminJobStudent" type="checkbox" ${job.is_student_project?"checked":""}> Proyecto estudiantil</label>
+          <label class="check"><input id="adminJobPaid" type="checkbox" ${job.is_paid?"checked":""}> Remunerado</label>
+        </div>
+        <button class="primary gold">Guardar cambios</button>
+        <div id="adminJobFeedback"></div>
+      </form>`,true);
+
+    const checks=[...document.querySelectorAll("#adminJobRoleChecks input")];
+    const count=document.getElementById("adminJobRoleCount");
+    checks.forEach(c=>c.onchange=()=>{
+      if(checks.filter(x=>x.checked).length>3)c.checked=false;
+      count.textContent=`${checks.filter(x=>x.checked).length} / 3 roles`;
+    });
+
+    document.getElementById("adminJobEditForm").onsubmit=async e=>{
+      e.preventDefault();
+      const selected=checks.filter(x=>x.checked).map(x=>Number(x.value));
+      const fb=document.getElementById("adminJobFeedback");
+      if(!selected.length){fb.innerHTML=authNotice("Elegí al menos un rol.");return}
+      fb.innerHTML=authNotice("Guardando…");
+
+      const days=Number(document.getElementById("adminJobExpiry").value);
+      const expires=new Date(Date.now()+days*86400000).toISOString();
+
+      const {error}=await sb.from("job_posts").update({
+        title:document.getElementById("adminJobTitle").value.trim(),
+        description:document.getElementById("adminJobDescription").value.trim(),
+        is_student_project:document.getElementById("adminJobStudent").checked,
+        is_paid:document.getElementById("adminJobPaid").checked,
+        expires_at:expires
+      }).eq("id",id);
+
+      if(error){fb.innerHTML=authNotice(error.message);return}
+
+      const del=await sb.from("job_post_roles").delete().eq("job_post_id",id);
+      if(del.error){fb.innerHTML=authNotice(del.error.message);return}
+      const ins=await sb.from("job_post_roles").insert(selected.map(role_id=>({job_post_id:id,role_id})));
+      if(ins.error){fb.innerHTML=authNotice(ins.error.message);return}
+
+      await loadRealJobs();
+      closeModal();
+      renderAdminJobsSection();
+    };
+  }catch(e){alert(e.message)}
+}
+
+async function renderAdminApplicationsSection(){
+  const content=document.getElementById("adminPageContent");
+  if(!content)return;
+  content.innerHTML=authNotice("Cargando postulaciones…");
+
+  const {data,error}=await sb.from("job_applications")
+    .select("id,job_post_id,applicant_id,created_at,is_visible")
+    .order("created_at",{ascending:false});
+
+  if(error){content.innerHTML=authNotice(error.message);return}
+
+  const apps=data||[];
+  const jobIds=[...new Set(apps.map(a=>a.job_post_id))];
+  const applicantIds=[...new Set(apps.map(a=>a.applicant_id))];
+
+  let jobsData=[],profilesData=[];
+  if(jobIds.length){
+    const r=await sb.from("job_posts").select("id,title").in("id",jobIds);
+    jobsData=r.data||[];
+  }
+  if(applicantIds.length){
+    const r=await sb.from("profiles").select("id,full_name,primary_role_id,roles:primary_role_id(name)").in("id",applicantIds);
+    profilesData=r.data||[];
+  }
+
+  const jmap=new Map(jobsData.map(j=>[Number(j.id),j]));
+  const pmap=new Map(profilesData.map(p=>[p.id,p]));
+
+  content.innerHTML=`<div class="admin-section-intro"><strong>${apps.length}</strong> postulaciones totales.</div><div class="admin-list">${
+    apps.map(a=>{
+      const j=jmap.get(Number(a.job_post_id)),p=pmap.get(a.applicant_id);
+      return `<div class="admin-row">
+        <div>
+          <h4>${esc(p?.full_name||"Perfil")}</h4>
+          <div class="secondary">${esc(p?.roles?.name||"Sin rol")} → ${esc(j?.title||"Búsqueda")}</div>
+          <small>${a.is_visible?"VISIBLE PARA EL AUTOR":"OCULTA POR ADMINISTRACIÓN"}</small>
+        </div>
+        <div class="admin-actions">
+          <button data-aa-view="${a.applicant_id}">Ver perfil</button>
+          <button data-aa-toggle="${a.id}" data-value="${a.is_visible?"false":"true"}">${a.is_visible?"Ocultar":"Mostrar"}</button>
+          <button class="danger" data-aa-delete="${a.id}">Eliminar</button>
+        </div>
+      </div>`;
+    }).join("")||"<p>No hay postulaciones.</p>"
+  }</div>`;
+
+  document.querySelectorAll("[data-aa-view]").forEach(b=>b.onclick=()=>profileModal(b.dataset.aaView));
+  document.querySelectorAll("[data-aa-toggle]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.from("job_applications").update({is_visible:b.dataset.value==="true"}).eq("id",Number(b.dataset.aaToggle));
+    if(error)alert(error.message);else renderAdminApplicationsSection();
+  });
+  document.querySelectorAll("[data-aa-delete]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("¿Eliminar definitivamente esta postulación?"))return;
+    const {error}=await sb.from("job_applications").delete().eq("id",Number(b.dataset.aaDelete));
+    if(error)alert(error.message);else renderAdminApplicationsSection();
+  });
+}
+
 async function realAdminPanel(){
-  openModal(`<div class="eyebrow">CÓRDOBA CASTING / ADMIN REAL</div><h2>Gestión de perfiles</h2><p>Esta vista ya consulta tu proyecto Supabase real.</p><div class="admin-toolbar"><button data-real-admin-filter="pending">Pendientes</button><button data-real-admin-filter="approved">Publicados</button><button data-real-admin-filter="rejected">Rechazados</button><button data-real-admin-filter="all">Todos</button><button id="realAdminLogout">Salir</button></div><div id="realAdminList" class="admin-panel">${authNotice("Cargando…")}</div>`,true);
+  openModal(`<div class="eyebrow">CÓRDOBA CASTING / ADMIN REAL</div><h2>Gestión de perfiles</h2><p>Esta vista ya consulta tu proyecto Supabase real.</p><div class="admin-toolbar"><button data-real-admin-filter="pending">Pendientes</button><button data-real-admin-filter="approved">Publicados</button><button data-real-admin-filter="rejected">Rechazados</button><button data-real-admin-filter="all">Todos</button><button id="realAdminApplications">Postulaciones</button><button id="realAdminLogout">Salir</button></div><div id="realAdminList" class="admin-panel">${authNotice("Cargando…")}</div>`,true);
   document.getElementById("realAdminLogout").onclick=realLogout;
   document.querySelectorAll("[data-real-admin-filter]").forEach(b=>b.onclick=()=>drawRealAdmin(b.dataset.realAdminFilter));
+  document.getElementById("realAdminApplications").onclick=drawRealAdminApplications;
   await drawRealAdmin("pending");
 }
 
@@ -678,6 +1281,64 @@ function bindRealAdminActions(filter){
   document.querySelectorAll("[data-real-visible]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_visibility",{target_profile:b.dataset.realVisible,value:b.dataset.value==="true"});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
 }
 
+
+async function drawRealAdminApplications(){
+  const list=document.getElementById("realAdminList");
+  list.innerHTML=authNotice("Cargando postulaciones…");
+
+  const {data,error}=await sb.from("job_applications")
+    .select("id,job_post_id,applicant_id,created_at,is_visible")
+    .order("created_at",{ascending:false});
+
+  if(error){list.innerHTML=authNotice(error.message);return}
+
+  const apps=data||[];
+  const jobIds=[...new Set(apps.map(a=>a.job_post_id))];
+  const applicantIds=[...new Set(apps.map(a=>a.applicant_id))];
+
+  let jobsData=[],profilesData=[];
+  if(jobIds.length){
+    const r=await sb.from("job_posts").select("id,title").in("id",jobIds);
+    jobsData=r.data||[];
+  }
+  if(applicantIds.length){
+    const r=await sb.from("profiles").select("id,full_name,primary_role_id,roles:primary_role_id(name)").in("id",applicantIds);
+    profilesData=r.data||[];
+  }
+
+  const jmap=new Map(jobsData.map(j=>[Number(j.id),j]));
+  const pmap=new Map(profilesData.map(p=>[p.id,p]));
+
+  list.innerHTML=apps.length?apps.map(a=>{
+    const j=jmap.get(Number(a.job_post_id)),p=pmap.get(a.applicant_id);
+    return `<div class="admin-row">
+      <div>
+        <h4>${esc(p?.full_name||"Perfil")}</h4>
+        <div class="secondary">${esc(p?.roles?.name||"Sin rol")} → ${esc(j?.title||"Búsqueda")}</div>
+        <small>${a.is_visible?"VISIBLE PARA EL AUTOR":"OCULTA POR ADMINISTRACIÓN"}</small>
+      </div>
+      <div class="admin-actions">
+        <button data-admin-app-view="${a.applicant_id}">Ver perfil</button>
+        <button data-admin-app-toggle="${a.id}" data-value="${a.is_visible?"false":"true"}">${a.is_visible?"Ocultar":"Mostrar"}</button>
+        <button class="danger" data-admin-app-delete="${a.id}">Eliminar</button>
+      </div>
+    </div>`;
+  }).join(""):"<p>No hay postulaciones.</p>";
+
+  document.querySelectorAll("[data-admin-app-view]").forEach(b=>b.onclick=()=>profileModal(b.dataset.adminAppView));
+  document.querySelectorAll("[data-admin-app-toggle]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.from("job_applications")
+      .update({is_visible:b.dataset.value==="true"})
+      .eq("id",Number(b.dataset.adminAppToggle));
+    if(error)alert(error.message);else drawRealAdminApplications();
+  });
+  document.querySelectorAll("[data-admin-app-delete]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("¿Eliminar definitivamente esta postulación?"))return;
+    const {error}=await sb.from("job_applications").delete().eq("id",Number(b.dataset.adminAppDelete));
+    if(error)alert(error.message);else drawRealAdminApplications();
+  });
+}
+
 async function realAdminPreview(id){
   const [p,priv,mod,tags]=await Promise.all([
     sb.from("profiles").select("*, roles:primary_role_id(name)").eq("id",id).single(),
@@ -688,7 +1349,7 @@ async function realAdminPreview(id){
   if(p.error){alert(p.error.message);return}
   const x=p.data,embed=embedUrl(x.reel_url);
   openModal(`<div class="eyebrow">REVISIÓN ADMINISTRATIVA REAL</div><div class="profile-top"><div class="profile-avatar">${initials(x.full_name||"RR")}</div><div><div class="profile-role">${esc(x.roles?.name||"Sin rol")}</div><div class="profile-name">${esc(x.full_name||"(Sin nombre)")}</div><div class="secondary">${(tags.data||[]).map(t=>esc(t.tag)).join(" · ")}</div></div><div class="profile-score"><strong>${String(x.status).toUpperCase()}</strong>${x.is_visible?"VISIBLE":"OCULTO"}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(x.bio||"Sin descripción")}</p></div>${x.roles?.name==="Guion"?`<div class="profile-section"><h4>Muestra de guion</h4><p>${x.script_pdf_path?"PDF cargado en Storage privado.":"Sin PDF cargado."}</p></div>`:`<div class="profile-section"><h4>Reel</h4>${embed?`<div class="video-card"><iframe src="${embed}" allowfullscreen></iframe></div>`:"<p>Sin reel válido.</p>"}</div>`}<div class="profile-section"><h4>Contacto privado</h4><p>${esc(priv.data?.contact_type||"—")}: <strong>${esc(priv.data?.contact_value||"—")}</strong></p></div>${mod.data?.rejection_reason?authNotice(`Motivo anterior: ${mod.data.rejection_reason}`):""}<div class="profile-actions"><button id="backRealAdmin" class="outline">Volver</button></div>`,true);
-  document.getElementById("backRealAdmin").onclick=realAdminPanel;
+  document.getElementById("backRealAdmin").onclick=closeModal;
 }
 
 async function bootstrapReal(){

@@ -76,3 +76,25 @@ Corrección de integración:
 - Ambas funciones usan ahora `realState.user`, es decir la sesión real de Supabase.
 - Contactar sigue en modo demo deliberadamente; no envía todavía email ni WhatsApp.
 - No se modifica diseño ni otros flujos.
+
+## V0.8.8
+- Búsquedas conectadas a Supabase real.
+- Publicación real con título, hasta 3 roles, descripción, estudiantil, remunerado y caducidad 1–10 días.
+- Se muestra tiempo restante para expirar.
+- Solo perfiles aprobados pueden publicar o postularse.
+- Postulación real con un clic usando el perfil.
+- El autor de la búsqueda ve los perfiles postulados y puede abrirlos/reproducir su material.
+- El usuario puede retirar su propia postulación.
+- Panel admin: nueva vista “Postulaciones” con Ver perfil, Ocultar/Mostrar y Eliminar.
+- Las postulaciones ocultas dejan de ser visibles para el autor de la búsqueda, pero siguen existiendo para moderación.
+
+## V0.8.9
+- Administración deja de estar mezclada con “Mi cuenta”.
+- Nueva pestaña `Administración`, visible ÚNICAMENTE cuando la sesión pertenece a un admin real.
+- Mi cuenta vuelve a abrir el perfil/cuenta incluso para administradores.
+- Administración centralizada con tres secciones: Perfiles, Búsquedas y Postulaciones.
+- Admin puede ver, editar y eliminar cualquier búsqueda, incluso expirada.
+- Al editar una búsqueda puede cambiar título, roles, descripción, categorías y renovar su vigencia entre 1 y 10 días.
+- Admin mantiene ocultar/mostrar/eliminar postulaciones.
+- El listado público de búsquedas deja de depender de la vista `active_job_posts` y consulta directamente `job_posts` con `expires_at > ahora`, respetando RLS.
+- Esto evita que una búsqueda válida desaparezca por problemas de la vista intermedia.
