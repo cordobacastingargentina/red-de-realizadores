@@ -1,38 +1,30 @@
-# Red de Realizadores — V0.7
+# Red de Realizadores V0.8 — Supabase Fase 1
 
-Prototipo navegable previo a la conexión con Supabase.
+Esta versión conecta el frontend al proyecto real de Supabase.
 
-## Cambios principales
-- Rol principal con prioridad real en búsqueda.
-- Hasta 5 roles secundarios / palabras clave libres por perfil.
-- Búsqueda por herramientas como Blender, DaVinci, Pro Tools, etc.
-- Si el rol principal es **Guion**, se desactiva el reel y se habilita un único PDF.
-- Reel único de YouTube o Vimeo, embebido en la plataforma.
-- Recomendaciones limitadas a una por usuario y perfil.
-- Distintivo dorado de perfil verificado, administrado por Córdoba Casting.
-- Indicador visual para perfiles muy recomendados.
-- Formación rediseñada con la paleta bordó/púrpura/crema del Aula Virtual.
-- Búsquedas de proyectos con hasta 3 roles, flags Estudiantil/Remunerado y caducidad máxima de 10 días.
+## Ya es real
+- Registro por email y contraseña.
+- Login / sesión persistente / logout.
+- Cambio de contraseña.
+- Perfil profesional en `profiles`.
+- Contacto privado en `profile_private`.
+- Tags reales en `profile_tags`.
+- Reel YouTube/Vimeo.
+- PDF de Guion a Storage `scripts`.
+- Enviar perfil a revisión mediante RPC.
+- Detección real de admin desde `user_roles`.
+- Panel admin real: pendientes, aprobados, rechazados, aprobar, aprobar+verificar, rechazar, verificar y ocultar/mostrar.
 
-## Acceso demo
-Email: demo@redrealizadores.com
-Contraseña: demo123
+## Sigue demo
+- Directorio público visible en portada.
+- Recomendaciones.
+- Búsquedas y postulaciones.
+- Contacto entre perfiles.
 
-Abrir `index.html` en el navegador.
+Es intencional: primero se prueba Auth + perfiles + moderación antes de conectar las capas sociales.
 
+## Configuración
+`supabase-config.js` contiene Project URL y publishable key públicas.
 
-## V0.7
-- Panel administrador demo: aprobar, rechazar con motivo, verificar, editar, ocultar y eliminar perfiles.
-- Recomendaciones propias editables y eliminables; una sola recomendación por persona.
-- Moderación administrativa de recomendaciones.
-- Badges de verificado y muy recomendado reforzados.
-- Formación: se elimina texto duplicado de Córdoba Casting y pasa a “Nuestras Propuestas”.
-- Admin demo: admin@cordobacasting.com / admin123
-
-## V0.7
-- “Ocultar” ahora solo quita el perfil de la web pública; nunca desaparece del panel admin.
-- El administrador puede abrir el perfil completo de cualquier pendiente antes de aprobar/rechazar.
-- La revisión admin muestra bio, etiquetas, reel o PDF, disponibilidad y contacto privado.
-- Los usuarios pueden guardar un único canal privado de contacto: email o WhatsApp.
-- Contacto demo: el destinatario recibe una solicitud indicando qué perfil quiere contactarlo y el mensaje.
-- El contacto sigue marcado como flujo experimental; no define todavía el canal final real.
+## Para probar admin
+La cuenta cuyo UUID convertiste a `admin` en `public.user_roles` debe iniciar sesión con su email/password real de Supabase.

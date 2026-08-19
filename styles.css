@@ -27,3 +27,8 @@
 .admin-row small{line-height:1.5}
 .admin-actions [data-admin-view]{background:#153642;color:#fff;border-color:#153642}
 .profile-score strong{font-size:14px}
+
+/* V0.8 — Supabase Fase 1 */
+.notice{margin:12px 0}
+.account-tabs button{cursor:pointer}
+.admin-row button{cursor:pointer}
