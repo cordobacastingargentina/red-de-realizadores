@@ -1,4 +1,4 @@
-# Red de Realizadores — V0.6
+# Red de Realizadores — V0.7
 
 Prototipo navegable previo a la conexión con Supabase.
 
@@ -21,10 +21,18 @@ Contraseña: demo123
 Abrir `index.html` en el navegador.
 
 
-## V0.6
+## V0.7
 - Panel administrador demo: aprobar, rechazar con motivo, verificar, editar, ocultar y eliminar perfiles.
 - Recomendaciones propias editables y eliminables; una sola recomendación por persona.
 - Moderación administrativa de recomendaciones.
 - Badges de verificado y muy recomendado reforzados.
 - Formación: se elimina texto duplicado de Córdoba Casting y pasa a “Nuestras Propuestas”.
 - Admin demo: admin@cordobacasting.com / admin123
+
+## V0.7
+- “Ocultar” ahora solo quita el perfil de la web pública; nunca desaparece del panel admin.
+- El administrador puede abrir el perfil completo de cualquier pendiente antes de aprobar/rechazar.
+- La revisión admin muestra bio, etiquetas, reel o PDF, disponibilidad y contacto privado.
+- Los usuarios pueden guardar un único canal privado de contacto: email o WhatsApp.
+- Contacto demo: el destinatario recibe una solicitud indicando qué perfil quiere contactarlo y el mensaje.
+- El contacto sigue marcado como flujo experimental; no define todavía el canal final real.
