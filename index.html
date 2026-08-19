@@ -1,113 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Red de Realizadores, una iniciativa de Córdoba Casting para conectar profesionales audiovisuales." />
-  <title>Red de Realizadores — Córdoba Casting</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Red de Realizadores, una iniciativa de Córdoba Casting." />
+<title>Red de Realizadores — Córdoba Casting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#home" data-route="home" aria-label="Red de Realizadores - Inicio">
-      <img src="assets/rr-logo.svg" alt="Red de Realizadores" class="brand-logo">
-    </a>
-    <nav>
-      <a href="#home" data-route="home">Realizadores</a>
-      <a href="#recursos" data-route="recursos">Recursos</a>
-      <a href="#formacion" data-route="formacion">Formación</a>
-      <button class="account-button" id="openAccountBtn">Ingresar</button>
-    </nav>
-  </header>
-
-  <main id="app"></main>
-
-  <footer class="site-footer">
-    <div class="footer-brand">
-      <img src="assets/cordoba-casting-logo.png" alt="Córdoba Casting">
-      <div><strong>RED DE REALIZADORES</strong><span>Una iniciativa de Córdoba Casting</span></div>
-    </div>
-    <div class="footer-meta">V0.3 · Prototipo navegable · Datos demo</div>
-  </footer>
-
-  <div class="modal-backdrop hidden" id="modalBackdrop"></div>
-  <div class="modal hidden" id="modal" role="dialog" aria-modal="true">
-    <button class="modal-close" id="closeModalBtn" aria-label="Cerrar">×</button>
-    <div id="modalContent"></div>
-  </div>
-
-  <template id="homeTemplate">
-    <section class="hero wrap">
-      <div class="hero-copy">
-        <div class="eyebrow">RED PROFESIONAL AUDIOVISUAL · CÓRDOBA</div>
-        <h1>Encontrá a quien<br><span>hace la película.</span></h1>
-        <p>Una red para conectar realizadores audiovisuales según su oficio, disponibilidad y forma de trabajar.</p>
-      </div>
-      <div class="hero-symbol" aria-hidden="true"><span>RR</span><small>RED / 001</small></div>
-    </section>
-
-    <section class="search-panel wrap">
-      <div class="search-line">
-        <label for="searchInput">BUSCAR POR NOMBRE, ROL O HABILIDAD</label>
-        <input id="searchInput" type="search" autocomplete="off" placeholder="Ej: fotografía, sonido, animación, producción…" />
-      </div>
-      <div class="filter-row">
-        <select id="roleFilter"><option value="">Todos los roles</option></select>
-        <label class="check"><input type="checkbox" id="availableFilter"><span>Disponible ahora</span></label>
-        <label class="check"><input type="checkbox" id="studentFilter"><span>Acepta estudiantiles</span></label>
-        <button class="clear-filters" id="clearFiltersBtn">Limpiar filtros</button>
-      </div>
-    </section>
-
-    <section class="directory wrap">
-      <div class="directory-head">
-        <div><strong id="resultsCount">0</strong> realizadores</div>
-        <button class="gold-btn" id="createProfileBtn">Crear mi perfil</button>
-      </div>
-      <div class="cards" id="cardsContainer"></div>
-      <div id="emptyState" class="empty-state hidden">No encontramos perfiles con esos filtros.</div>
-    </section>
-
-    <section class="about-strip">
-      <div class="wrap strip-grid">
-        <div><span>01</span><strong>Roles claros</strong><p>Buscá por oficio principal y especialidades secundarias.</p></div>
-        <div><span>02</span><strong>Material directo</strong><p>Entrá al perfil y accedé al reel o portfolio del realizador.</p></div>
-        <div><span>03</span><strong>Contacto protegido</strong><p>La consulta se intermedia sin publicar teléfono ni email.</p></div>
-      </div>
-    </section>
-  </template>
-
-  <template id="resourcesTemplate">
-    <section class="page wrap narrow">
-      <div class="eyebrow">RECURSOS / RR</div>
-      <h1>Material útil<br>para realizar.</h1>
-      <p class="lead">Herramientas concretas para preproducción, rodaje y trabajo colaborativo. La sección queda preparada para crecer como biblioteca propia.</p>
-      <div class="resource-grid">
-        <article><span>01</span><h3>Checklist de rodaje</h3><p>Equipo, permisos, continuidad, transporte y necesidades antes de filmar.</p><button class="text-btn">Ver recurso →</button></article>
-        <article><span>02</span><h3>Plan de rodaje</h3><p>Modelo base para organizar jornadas, escenas, locaciones y necesidades técnicas.</p><button class="text-btn">Ver recurso →</button></article>
-        <article><span>03</span><h3>Guía de casting</h3><p>Cómo armar una convocatoria y pedir material de forma clara y profesional.</p><button class="text-btn">Ver recurso →</button></article>
-        <article><span>04</span><h3>Breakdown de guion</h3><p>Plantilla inicial para desglosar necesidades de producción por escena.</p><button class="text-btn">Ver recurso →</button></article>
-      </div>
-    </section>
-  </template>
-
-  <template id="trainingTemplate">
-    <section class="training-page">
-      <div class="wrap narrow">
-        <div class="training-brand"><img src="assets/cordoba-casting-logo.png" alt="Córdoba Casting"><span>FORMACIÓN</span></div>
-        <h1>Formación para el trabajo audiovisual.</h1>
-        <p class="lead dark">Cursos y talleres de Córdoba Casting vinculados a dirección, actuación frente a cámara y práctica audiovisual.</p>
-        <div class="course-list">
-          <article><div><span class="course-tag">CURSO</span><h3>Dirección actoral para cámara</h3><p>Herramientas prácticas para trabajar con intérpretes y dirigir escenas para audiovisual.</p></div><button class="dark-outline">Más información</button></article>
-          <article><div><span class="course-tag">TALLER</span><h3>Taller de escenas</h3><p>Entrenamiento, ensayo y filmación de escenas con foco en experiencia y material final.</p></div><button class="dark-outline">Más información</button></article>
-        </div>
-      </div>
-    </section>
-  </template>
-
-  <script src="app.js"></script>
+<header class="topbar">
+  <a class="brand" href="#realizadores" data-route="realizadores"><img src="assets/rr-logo.svg" alt="Red de Realizadores"></a>
+  <nav>
+    <a href="#realizadores" data-route="realizadores">Realizadores</a>
+    <a href="#busquedas" data-route="busquedas">Búsquedas</a>
+    <a href="#recursos" data-route="recursos">Recursos</a>
+    <a href="#formacion" data-route="formacion">Formación</a>
+    <button id="openAccountBtn" class="account-button">Ingresar</button>
+  </nav>
+</header>
+<main id="app"></main>
+<footer class="site-footer">
+  <div class="footer-left"><img src="assets/rr-logo.svg" alt="Red de Realizadores"></div>
+  <div class="cc-signature"><span>UNA INICIATIVA DE</span><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"></div>
+  <div class="footer-meta">V0.4 · Prototipo navegable · Datos demo</div>
+</footer>
+<div id="modalBackdrop" class="modal-backdrop hidden"></div>
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"><button id="closeModalBtn" class="modal-close">×</button><div id="modalContent"></div></div>
+<script src="app.js"></script>
 </body>
 </html>
