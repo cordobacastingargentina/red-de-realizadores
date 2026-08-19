@@ -36,3 +36,43 @@
 /* V0.8.3 — solo integración de datos reales, sin rediseño */
 .person-avatar,.profile-avatar{overflow:hidden}
 .person-avatar img,.profile-avatar img{width:100%;height:100%;object-fit:cover}
+
+/* V0.8.6 — Rechazo y reenvío */
+.rejected-screen{padding:10px 4px 4px}
+.rejected-icon{
+  width:54px;height:54px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#8a2330;color:#fff;
+  font-size:30px;font-weight:900;margin-bottom:18px
+}
+.rejected-eyebrow{color:#8a2330!important}
+.rejected-screen h2{font-size:34px;line-height:1.05;margin:6px 0 12px;color:#6f1e29}
+.rejected-intro{font-size:16px;line-height:1.55;max-width:720px}
+.rejection-reason{
+  margin:24px 0;padding:20px 22px;
+  border:2px solid #8a2330;border-radius:14px;
+  background:#fff4f4;display:grid;gap:8px
+}
+.rejection-reason span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#8a2330}
+.rejection-reason strong{font-size:17px;line-height:1.45;color:#3e171c}
+.rejected-next{
+  padding:18px 20px;border-radius:14px;
+  background:#f4efe4;border:1px solid #d8c9a8;
+  margin-bottom:18px
+}
+.rejected-next h4{margin:0 0 8px;font-size:14px}
+.rejected-next p{margin:7px 0;line-height:1.55}
+.rejected-inline{
+  display:grid;gap:5px;margin:14px 0;padding:15px 17px;
+  border-radius:12px;border:2px solid #8a2330;background:#fff3f3
+}
+.rejected-inline strong{color:#8a2330;font-size:13px;letter-spacing:.06em}
+.rejected-inline span{font-weight:700}
+.rejected-inline small{opacity:.72}
+.submitted-again{text-align:center;padding:14px 4px}
+.submitted-icon{
+  width:54px;height:54px;border-radius:50%;
+  display:grid;place-items:center;margin:0 auto 16px;
+  background:#214c49;color:#fff;font-size:28px;font-weight:900
+}
+.submitted-again h2{font-size:30px;margin:8px 0 12px}

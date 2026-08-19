@@ -50,3 +50,22 @@ Corrección de integración:
 - Corregido “Publicar búsqueda” para reconocer la sesión real de Supabase.
 - Corregida la participación demo con usuarios UUID.
 - No se modifica el diseño de V0.8.3.
+
+## V0.8.5
+- Recomendaciones conectadas a Supabase real.
+- Ya no vuelve a pedir login si la sesión real está activa.
+- Una recomendación por usuario y realizador, garantizada también por la base.
+- Si ya recomendaste a alguien, el botón pasa a “Editar mi recomendación”.
+- Se puede editar o eliminar la recomendación real.
+- El perfil público carga autor, proyecto y comentario desde Supabase.
+- El mensaje de rechazo sigue guardándose en `profile_moderation.rejection_reason`; todavía NO se envía por email.
+
+## V0.8.6
+- Si un usuario rechazado vuelve a entrar, ve una pantalla grande e inequívoca de “Tu perfil fue rechazado”.
+- Se muestra el motivo exacto guardado por administración.
+- Se explica claramente qué debe corregir y que el perfil no está publicado.
+- Botón directo “Corregir mi perfil”.
+- Para perfiles rechazados, Guardar cambios vuelve a enviar automáticamente el perfil a revisión.
+- Después de guardar, el estado pasa a `pending` y aparece una confirmación “Perfil reenviado”.
+- Se elimina el segundo paso manual “Enviar a revisión” para perfiles rechazados.
+- Los borradores nuevos siguen necesitando “Enviar a revisión” la primera vez.
