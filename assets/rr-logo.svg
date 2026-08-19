@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 170" role="img" aria-labelledby="t d">
+<title id="t">Red de Realizadores</title><desc id="d">Monograma RR en marco técnico</desc>
+<g fill="none" stroke="#D4A72C" stroke-width="5" stroke-linecap="square">
+<path d="M18 48V18h30M472 18h30v30M18 122v30h30M472 152h30v-30"/>
+</g>
+<g fill="#F7F4ED">
+<path d="M76 48h62c34 0 54 16 54 43 0 17-9 30-25 37l32 36h-38l-27-31h-24v31H76V48Zm34 26v34h27c13 0 20-6 20-17s-7-17-20-17h-27Z"/>
+<path d="M202 48h62c34 0 54 16 54 43 0 17-9 30-25 37l32 36h-38l-27-31h-24v31h-34V48Zm34 26v34h27c13 0 20-6 20-17s-7-17-20-17h-27Z"/>
+</g>
+<g fill="#F7F4ED" font-family="Arial, Helvetica, sans-serif">
+<text x="350" y="76" font-size="22" font-weight="700" letter-spacing="2">RED DE</text>
+<text x="350" y="105" font-size="22" font-weight="700" letter-spacing="1.2">REALIZADORES</text>
+<text x="350" y="135" font-size="10" letter-spacing="2.2" fill="#B9C2C5">CÓRDOBA CASTING</text>
+</g>
+</svg>

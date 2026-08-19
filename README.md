@@ -1,20 +1,20 @@
-# Red de Realizadores — V0.2
+# Red de Realizadores — V0.3
 
-Prototipo frontend navegable para Córdoba Casting — Red de Realizadores.
+Prototipo navegable de la plataforma **Red de Realizadores**, una iniciativa de Córdoba Casting.
 
-## Incluye
-- Directorio de realizadores con búsqueda por nombre, rol o keyword.
-- Filtros por rol, disponibilidad actual y aceptación de proyectos estudiantiles.
-- Tarjetas donde el rol es protagonista y la foto es secundaria.
-- Perfil público mínimo con bio corta, material de trabajo por link y fecha de actualización.
-- Contacto intermediado sin exponer teléfono/email del realizador.
-- Registro/login simulado.
-- Edición del perfil por el propio usuario.
-- Cambio de contraseña simulado.
+## Qué incluye
+- Identidad principal en azul marino + petróleo + blanco + dorado.
+- Logo compacto RR basado en la opción elegida y logo real de Córdoba Casting.
+- 48 perfiles ficticios para probar búsqueda y filtros.
+- Búsqueda por nombre, rol, especialidad, habilidad y bio.
+- Filtro por rol, disponibilidad y aceptación de proyectos estudiantiles.
+- Perfil público mínimo con reel/portfolio y contacto protegido.
+- Edición de perfil, creación de cuenta y cambio de contraseña simulados.
 - Secciones Recursos y Formación.
-- Identidad visual petróleo/negro/blanco, con firma Córdoba Casting.
+- Diseño responsive.
+
+## Abrir
+Abrí `index.html` en el navegador.
 
 ## Próxima etapa
-Conectar Supabase Auth + tablas de perfiles + RLS + Storage para foto + formulario de contacto real.
-
-Abrir `index.html` en un navegador.
+Conectar Supabase Auth, Database, Storage y políticas RLS; luego conectar el sistema de contacto intermediado.
