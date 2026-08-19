@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 92" role="img" aria-label="Red de Realizadores">
+  <g fill="#fff">
+    <text x="2" y="65" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="300">R</text>
+    <rect x="72" y="15" width="1.8" height="59" fill="#D3B46B"/>
+    <text x="91" y="65" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="300">R</text>
+    <text x="178" y="38" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" letter-spacing="4.2">RED DE</text>
+    <text x="178" y="62" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" letter-spacing="2.7">REALIZADORES</text>
+  </g>
+</svg>

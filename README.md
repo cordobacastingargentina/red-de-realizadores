@@ -1,4 +1,4 @@
-# Red de Realizadores — V0.5
+# Red de Realizadores — V0.6
 
 Prototipo navegable previo a la conexión con Supabase.
 
@@ -19,3 +19,12 @@ Email: demo@redrealizadores.com
 Contraseña: demo123
 
 Abrir `index.html` en el navegador.
+
+
+## V0.6
+- Panel administrador demo: aprobar, rechazar con motivo, verificar, editar, ocultar y eliminar perfiles.
+- Recomendaciones propias editables y eliminables; una sola recomendación por persona.
+- Moderación administrativa de recomendaciones.
+- Badges de verificado y muy recomendado reforzados.
+- Formación: se elimina texto duplicado de Córdoba Casting y pasa a “Nuestras Propuestas”.
+- Admin demo: admin@cordobacasting.com / admin123
