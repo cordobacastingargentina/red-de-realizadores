@@ -69,3 +69,10 @@ Corrección de integración:
 - Después de guardar, el estado pasa a `pending` y aparece una confirmación “Perfil reenviado”.
 - Se elimina el segundo paso manual “Enviar a revisión” para perfiles rechazados.
 - Los borradores nuevos siguen necesitando “Enviar a revisión” la primera vez.
+
+## V0.8.7
+- Corregido el chequeo de sesión en Recomendar.
+- Corregido el chequeo de sesión en Contactar.
+- Ambas funciones usan ahora `realState.user`, es decir la sesión real de Supabase.
+- Contactar sigue en modo demo deliberadamente; no envía todavía email ni WhatsApp.
+- No se modifica diseño ni otros flujos.

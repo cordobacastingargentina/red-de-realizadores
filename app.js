@@ -205,7 +205,50 @@ function demoDrawAdmin(filter){const arr=profiles.filter(p=>filter==="all"||p.st
 function demoAdminPreviewProfile(id){const p=profiles.find(x=>x.id===id),embed=embedUrl(p.reel),isWriter=p.primary==="Guion";openModal(`<div class="eyebrow">REVISIÓN ADMINISTRATIVA</div><div class="profile-top"><div class="profile-avatar">${initials(p.name)}</div><div><div class="profile-role">${esc(p.primary)}</div><div class="profile-name">${esc(p.name)} ${p.verified?verifiedBadge(true):""}</div><div class="secondary" style="color:#74858a">${p.tags.map(esc).join(" · ")}</div></div><div class="profile-score"><strong>${p.status.toUpperCase()}</strong>${p.visibility==="hidden"?"OCULTO EN WEB":"VISIBLE EN WEB"}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(p.bio)}</p><div class="status-row"><span class="pill on">${p.available?"DISPONIBLE AHORA":"NO DISPONIBLE"}</span>${p.students?'<span class="pill on">ACEPTA ESTUDIANTILES</span>':''}</div></div>${isWriter?writerMaterial(p):videoMaterial(p,embed)}<div class="profile-section"><h4>Datos privados de contacto</h4><p><strong>${p.contactType==="whatsapp"?"WhatsApp":"Email"}:</strong> ${esc(p.contactValue)}</p><small>Solo visible para administración. En la web pública nunca se expone.</small></div>${p.rejectionReason?`<div class="notice"><strong>Motivo de rechazo anterior:</strong> ${esc(p.rejectionReason)}</div>`:""}<div class="profile-actions">${p.status!=="approved"?`<button id="adminApprovePreview" class="primary">Aprobar</button><button id="adminApproveVerifyPreview" class="primary gold">Aprobar + verificar</button>`:""}${p.status!=="rejected"?`<button id="adminRejectPreview" class="outline">Rechazar</button>`:""}<button id="adminBackBtn" class="outline">Volver al panel</button></div>`,true);const approve=document.getElementById("adminApprovePreview");if(approve)approve.onclick=()=>{p.status="approved";p.rejectionReason="";demoAdminPanel()};const av=document.getElementById("adminApproveVerifyPreview");if(av)av.onclick=()=>{p.status="approved";p.verified=true;p.rejectionReason="";demoAdminPanel()};const reject=document.getElementById("adminRejectPreview");if(reject)reject.onclick=()=>{const reason=prompt("Motivo del rechazo. En la versión conectada se enviará al email del usuario:","Revisá la información o el material cargado y volvé a enviar el perfil.");if(reason===null)return;p.status="rejected";p.rejectionReason=reason;demoAdminPanel()};document.getElementById("adminBackBtn").onclick=demoAdminPanel}
 function demoAdminEditUser(id){const p=profiles.find(x=>String(x.id)===String(id));openModal(`<div class="eyebrow">ADMIN / EDITAR PERFIL</div><h2>${esc(p.name)}</h2><form id="adminEditForm" class="form-grid"><label>Nombre<input id="aName" value="${esc(p.name)}"></label><label>Rol principal<select id="aPrimary">${roles.map(r=>`<option ${r===p.primary?"selected":""}>${r}</option>`).join("")}</select></label><label>Descripción<textarea id="aBio" maxlength="350">${esc(p.bio)}</textarea></label><label>Etiquetas secundarias<input id="aTags" value="${esc(p.tags.join(", "))}"><span class="char-count">Máximo 5, separadas por coma.</span></label><button class="primary">Guardar como administrador</button></form>`);document.getElementById("adminEditForm").onsubmit=e=>{e.preventDefault();p.name=document.getElementById("aName").value.trim();p.primary=document.getElementById("aPrimary").value;p.bio=document.getElementById("aBio").value.trim();p.tags=document.getElementById("aTags").value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,5);demoAdminPanel()}}
 
-function contactModal(p){if(!state.loggedIn){realAuthModal("login");return}const sender=profiles.find(x=>x.id===state.currentUserId);openModal(`<div class="eyebrow">CONTACTO ENTRE PERFILES</div><h2>Contactar a ${esc(p.name)}</h2><p>Tu teléfono o email no se comparte automáticamente. El realizador recibirá una notificación indicando qué perfil quiere contactarlo y el mensaje que escribas.</p><form id="contactForm" class="form-grid"><label>Mensaje<textarea id="contactMessage" maxlength="500" required placeholder="Contale brevemente por qué querés contactarlo."></textarea><span class="char-count">Máximo 500 caracteres</span></label><div class="notice"><strong>Vista previa de la notificación:</strong><br><br><strong>${esc(sender.name)}</strong> (${esc(sender.primary)}) quiere contactarse con vos y dejó el siguiente mensaje.</div><button class="primary">Enviar solicitud de contacto</button></form>`);document.getElementById("contactForm").onsubmit=e=>{e.preventDefault();openModal(`<div class="eyebrow">DEMO DE CONTACTO</div><h2>Solicitud enviada</h2><p>En la versión real, esta notificación se enviaría al ${p.contactType==="whatsapp"?"WhatsApp":"email"} privado que ${esc(p.name)} configuró en su cuenta.</p><div class="notice"><strong>${esc(sender.name)}</strong> quiere contactarse con vos:<br><br>${esc(document.getElementById("contactMessage")?.value||"Mensaje enviado desde Red de Realizadores.")}</div><p><small>Este flujo queda en prueba; todavía no define si la implementación final usará email, WhatsApp o ambos.</small></p>`)}}
+
+function contactModal(p){
+  if(!realState.user){
+    realAuthModal("login");
+    return;
+  }
+
+  const senderName=realState.profile?.full_name || "Un realizador";
+  const senderRole=realState.profile?.roles?.name || "Realizador";
+
+  openModal(`<div class="eyebrow">CONTACTO ENTRE PERFILES</div>
+    <h2>Contactar a ${esc(p.name)}</h2>
+    <p>Tu teléfono o email no se comparte automáticamente. El destinatario recibirá una solicitud indicando qué perfil quiere contactarlo y el mensaje que escribas.</p>
+
+    <form id="contactForm" class="form-grid">
+      <label>Mensaje
+        <textarea id="contactMessage" maxlength="500" required placeholder="Contale brevemente por qué querés contactarlo."></textarea>
+        <span class="char-count">Máximo 500 caracteres</span>
+      </label>
+
+      <div class="notice">
+        <strong>Vista previa:</strong><br><br>
+        <strong>${esc(senderName)}</strong> (${esc(senderRole)}) quiere contactarse con vos y dejó el siguiente mensaje.
+      </div>
+
+      <button class="primary">Enviar solicitud de contacto</button>
+    </form>`);
+
+  document.getElementById("contactForm").onsubmit=e=>{
+    e.preventDefault();
+    const msg=document.getElementById("contactMessage").value.trim();
+
+    openModal(`<div class="eyebrow">DEMO DE CONTACTO</div>
+      <h2>Solicitud preparada</h2>
+      <p>Este flujo todavía está en modo prueba. En la versión real, la notificación se enviará al canal privado configurado por ${esc(p.name)}.</p>
+
+      <div class="notice">
+        <strong>${esc(senderName)}</strong> (${esc(senderRole)}) quiere contactarse con vos:<br><br>
+        ${esc(msg)}
+      </div>
+
+      <p><small>Todavía no definimos si el envío final será por email, WhatsApp o ambos.</small></p>`);
+  };
+}
 function renderJobs(){app.innerHTML=`<section class="jobs-hero wrap"><div class="eyebrow">BÚSQUEDAS / PROYECTOS</div><h1 class="page-title">Encontrá equipo.<br>Sumate a proyectos.</h1><p class="lead">Publicaciones activas por hasta 10 días. Participás directamente con tu perfil profesional.</p></section><section class="jobs-controls wrap"><div class="job-filters"><label class="check"><input id="jobStudentFilter" type="checkbox"> Estudiantiles</label><label class="check"><input id="jobPaidFilter" type="checkbox"> Remunerados</label></div><button id="newJobBtn" class="gold-btn">+ Publicar búsqueda</button></section><section class="jobs wrap"><div id="jobGrid" class="job-grid"></div></section>`;const js=document.getElementById("jobStudentFilter"),jp=document.getElementById("jobPaidFilter");const draw=()=>{const arr=jobs.filter(j=>(!js.checked||j.student)&&(!jp.checked||j.paid));document.getElementById("jobGrid").innerHTML=arr.map(jobCard).join("");document.querySelectorAll("[data-job]").forEach(x=>x.onclick=()=>jobModal(+x.dataset.job))};js.onchange=jp.onchange=draw;document.getElementById("newJobBtn").onclick=newJobModal;draw()}
 function jobCard(j){return`<article class="job-card" data-job="${j.id}"><div class="job-meta"><span>BÚSQUEDA / ${String(j.id).padStart(3,"0")}</span><span>CADUCA EN ${j.days} DÍAS</span></div><h3>${esc(j.title)}</h3><p>${esc(j.description)}</p><div class="role-tags">${j.roles.map(r=>`<span class="tag">${esc(r)}</span>`).join("")}</div><div class="category-tags">${j.student?'<span class="tag red">ESTUDIANTIL</span>':''}${j.paid?'<span class="tag gold">REMUNERADO</span>':'<span class="tag">NO INDICA REMUNERACIÓN</span>'}</div><div class="job-bottom"><span>Publicado por <strong>${esc(j.author)}</strong></span><span>${j.participants.length} interesados</span></div></article>`}
 function jobModal(id){const j=jobs.find(x=>x.id===id);openModal(`<div class="eyebrow">BÚSQUEDA / ${String(j.id).padStart(3,"0")}</div><h2>${esc(j.title)}</h2><div class="category-tags">${j.student?'<span class="tag red" style="color:#8e2732;border-color:#b78e94">PROYECTO ESTUDIANTIL</span>':''}${j.paid?'<span class="tag gold" style="color:#7b651f;border-color:#baa55e">REMUNERADO</span>':'<span class="tag" style="color:#59666c;border-color:#bbb">NO INDICA REMUNERACIÓN</span>'}</div><div class="profile-section"><h4>Roles buscados</h4><div class="role-tags">${j.roles.map(r=>`<span class="pill on" style="color:#6d5a19;border-color:#c5ae62">${esc(r)}</span>`).join("")}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(j.description)}</p></div><div class="profile-section"><h4>Publicación</h4><p>Publicó <strong>${esc(j.author)}</strong> · caduca en <strong>${j.days} días</strong>.</p><button id="participateBtn" class="primary gold">Participar con mi perfil</button></div><div class="profile-section"><h4>Perfiles interesados</h4><div class="participants">${j.participants.map(id=>participantHtml(profiles.find(p=>p.id===id))).join("")}</div></div>`,true);document.getElementById("participateBtn").onclick=()=>participate(j);document.querySelectorAll("[data-reel-profile]").forEach(b=>b.onclick=e=>{e.stopPropagation();profileModal(b.dataset.reelProfile)})}
