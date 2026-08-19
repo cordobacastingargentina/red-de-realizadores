@@ -33,3 +33,13 @@ La cuenta cuyo UUID convertiste a `admin` en `public.user_roles` debe iniciar se
 - Corregido el botón “Ingresar”: ahora abre el flujo real de Supabase.
 - Corregido “Crear mi perfil” para abrir el registro real.
 - Eliminadas referencias rotas a funciones demo antiguas que podían producir errores JavaScript.
+
+## V0.8.2
+- El directorio principal ya consulta perfiles reales de Supabase.
+- Solo aparecen perfiles `approved` + `is_visible = true`.
+- Buscador real por nombre, rol principal y tags.
+- Filtros reales: disponibilidad, estudiantiles y verificados.
+- Orden por recomendaciones, actualización o nombre.
+- Perfil público real al hacer click.
+- Conteo y badge “Muy recomendado” derivados de `profile_recommendation_stats`.
+- Los perfiles demo dejan de alimentar la portada.
