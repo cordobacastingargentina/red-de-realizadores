@@ -42,3 +42,11 @@ Corrección de integración:
 - Solo perfiles approved + visible alimentan la grilla.
 - Perfil público mantiene el diseño previo y carga datos reales.
 - “Muy recomendado” usa la regla real de Supabase.
+
+## V0.8.4
+- Eliminado el UUID técnico de la interfaz pública.
+- Corregido abrir perfiles reales con IDs UUID.
+- Corregido “Crear / editar mi perfil”.
+- Corregido “Publicar búsqueda” para reconocer la sesión real de Supabase.
+- Corregida la participación demo con usuarios UUID.
+- No se modifica el diseño de V0.8.3.
