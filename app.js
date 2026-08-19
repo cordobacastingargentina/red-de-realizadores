@@ -15,9 +15,9 @@ const descriptors={
 const videoUrls=["https://www.youtube.com/watch?v=aqz-KE-bpKQ","https://vimeo.com/76979871"];
 const reviewTexts=["Gran compañero de equipo y muy resolutivo.","Excelente criterio y comunicación en rodaje.","Muy sólido técnicamente y siempre aporta soluciones.","Trabajaría nuevamente sin dudarlo."];
 const cameraIcon=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10l5-3v10l-5-3z"/><path d="M7 7l1.5-2h4L14 7"/></svg>`;
-const profiles=names.map((name,i)=>{const primary=roles[i%roles.length];const pool=descriptors[primary];const tags=[pool[i%pool.length],pool[(i+2)%pool.length],...(i%3===0?[pool[(i+4)%pool.length]]:[])].filter((v,idx,a)=>a.indexOf(v)===idx).slice(0,5);const recs=(i*7)%20;const verified=[1,4,8,12,18,24,31,37,43].includes(i+1);return{id:i+1,name,primary,tags,available:i%5!==0,students:i%3!==0,bio:`Trabajo principalmente en ${primary.toLowerCase()} para ficción, publicidad y proyectos independientes. Me interesan los equipos colaborativos y los procesos de producción cuidados.`,reel:primary==="Guion"?"":videoUrls[i%2],scriptPdfName:primary==="Guion"&&i%2===1?"muestra-guion.pdf":"",scriptPdfUrl:"",updated:`${String((i%18)+1).padStart(2,'0')} ago 2026`,verified,recommendations:Array.from({length:Math.min(recs,4)},(_,j)=>({author:names[(i+j+8)%names.length],authorId:((i+j+8)%names.length)+1,project:["Luz de fondo","Las horas quietas","Proyecto Umbral","Casa tomada"][j%4],comment:reviewTexts[(i+j)%reviewTexts.length]})),recommendationCount:recs};});
-profiles.forEach((p,i)=>{p.status=i===5?"pending":i===9?"rejected":"approved";p.rejectionReason=i===9?"Revisá el material cargado y volvé a enviar el perfil.":"";});
-profiles.forEach((p,i)=>{p.visibility=p.visibility||"visible";p.contactType=i%2===0?"email":"whatsapp";p.contactValue=i%2===0?`realizador${p.id}@demo.com`:`+54 9 351 555 ${String(1000+p.id)}`;});
+const demoProfiles=names.map((name,i)=>{const primary=roles[i%roles.length];const pool=descriptors[primary];const tags=[pool[i%pool.length],pool[(i+2)%pool.length],...(i%3===0?[pool[(i+4)%pool.length]]:[])].filter((v,idx,a)=>a.indexOf(v)===idx).slice(0,5);const recs=(i*7)%20;const verified=[1,4,8,12,18,24,31,37,43].includes(i+1);return{id:i+1,name,primary,tags,available:i%5!==0,students:i%3!==0,bio:`Trabajo principalmente en ${primary.toLowerCase()} para ficción, publicidad y proyectos independientes. Me interesan los equipos colaborativos y los procesos de producción cuidados.`,reel:primary==="Guion"?"":videoUrls[i%2],scriptPdfName:primary==="Guion"&&i%2===1?"muestra-guion.pdf":"",scriptPdfUrl:"",updated:`${String((i%18)+1).padStart(2,'0')} ago 2026`,verified,recommendations:Array.from({length:Math.min(recs,4)},(_,j)=>({author:names[(i+j+8)%names.length],authorId:((i+j+8)%names.length)+1,project:["Luz de fondo","Las horas quietas","Proyecto Umbral","Casa tomada"][j%4],comment:reviewTexts[(i+j)%reviewTexts.length]})),recommendationCount:recs};});
+demoProfiles.forEach((p,i)=>{p.status=i===5?"pending":i===9?"rejected":"approved";p.rejectionReason=i===9?"Revisá el material cargado y volvé a enviar el perfil.":"";});
+demoProfiles.forEach((p,i)=>{p.visibility=p.visibility||"visible";p.contactType=i%2===0?"email":"whatsapp";p.contactValue=i%2===0?`realizador${p.id}@demo.com`:`+54 9 351 555 ${String(1000+p.id)}`;});
 const jobs=[
 {id:11,title:"Buscamos DF y sonidista para corto",roles:["Dirección de Fotografía","Sonido"],description:"Cortometraje de ficción de dos jornadas. Buscamos un equipo pequeño y con ganas de trabajar una propuesta visual cuidada.",student:true,paid:false,days:4,author:"Mateo Ferreyra",participants:[3,8,18]},
 {id:12,title:"Dirección de arte para videoclip",roles:["Dirección de Arte"],description:"Videoclip independiente con una propuesta de arte basada en espacios intervenidos y paleta de color muy marcada.",student:false,paid:true,days:7,author:"Camila López",participants:[5,16]},
@@ -31,19 +31,38 @@ const esc=s=>String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const initials=n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
 function embedUrl(url){try{const u=new URL(url);if(u.hostname.includes("youtube.com")){const id=u.searchParams.get("v");return id?`https://www.youtube-nocookie.com/embed/${id}?rel=0`:null}if(u.hostname==="youtu.be")return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}?rel=0`;if(u.hostname.includes("vimeo.com")){const id=u.pathname.split("/").filter(Boolean)[0];return /^\d+$/.test(id||"")?`https://player.vimeo.com/video/${id}`:null}}catch(e){}return null}
 function verifiedBadge(label=true){return`<span class="verified" title="Perfil verificado por Córdoba Casting">${cameraIcon}${label?"VERIFICADO":""}</span>`}
-function topBadge(p){return p.recommendationCount>=15?`<span class="top-badge">★ MUY RECOMENDADO</span>`:""}
+function topBadge(p){return p.isTopRecommended?`<span class="top-badge">★ MUY RECOMENDADO</span>`:""}
 function openModal(html,wide=false){modalContent.innerHTML=html;modal.classList.toggle("wide",wide);modal.classList.remove("hidden");backdrop.classList.remove("hidden")}
 function closeModal(){modal.classList.add("hidden");backdrop.classList.add("hidden");modal.classList.remove("wide")}
 document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>realAccountModal();window.addEventListener("hashchange",route);document.querySelectorAll("[data-route]").forEach(a=>a.addEventListener("click",()=>{}));
-function route(){state.route=(location.hash||"#realizadores").slice(1);({realizadores:renderRealDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining}[state.route]||renderRealDirectory)()}
+function route(){state.route=(location.hash||"#realizadores").slice(1);({realizadores:renderDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining}[state.route]||renderDirectory)()}
 function matchRank(p,q,roleFilter){let rank=0;const qq=q.trim().toLowerCase();if(roleFilter){if(p.primary===roleFilter)rank+=120;else if(p.tags.some(t=>t.toLowerCase()===roleFilter.toLowerCase()))rank+=55;else return -1}if(!qq)return rank;const primary=p.primary.toLowerCase(),tags=p.tags.map(t=>t.toLowerCase()),name=p.name.toLowerCase(),bio=p.bio.toLowerCase();if(primary===qq)rank+=200;else if(primary.includes(qq))rank+=150;if(tags.some(t=>t===qq))rank+=100;else if(tags.some(t=>t.includes(qq)))rank+=75;if(name.includes(qq))rank+=60;if(bio.includes(qq))rank+=20;return rank||-1}
-function demoRenderDirectory(){app.innerHTML=`<section class="hero wrap"><div><div class="eyebrow">RED PROFESIONAL AUDIOVISUAL · CÓRDOBA</div><h1>Encontrá a quienes<br><span>hacen posible cada proyecto.</span></h1><p>Buscá por rol principal, otros oficios, herramientas o habilidades. El rol principal siempre tiene prioridad en los resultados.</p></div><aside class="hero-brand-panel"><img src="assets/rr-logo.svg" alt="Red de Realizadores"><div class="cc"><span>UNA INICIATIVA DE</span><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"></div></aside></section><section class="search-panel wrap"><div class="search-line"><label>BUSCAR POR NOMBRE, ROL, HERRAMIENTA O PALABRA CLAVE</label><input id="searchInput" placeholder="Ej: dirección, guion, Blender, DaVinci, sonido…"></div><div class="filter-row"><select id="roleFilter"><option value="">Todos los roles</option>${roles.map(r=>`<option>${r}</option>`).join("")}</select><label class="check"><input id="availableFilter" type="checkbox"> Disponible ahora</label><label class="check"><input id="studentFilter" type="checkbox"> Acepta estudiantiles</label><label class="check"><input id="verifiedFilter" type="checkbox"> Solo verificados</label><select id="sortFilter"><option value="relevance">Orden: relevancia</option><option value="recommendations">Más recomendados</option><option value="recent">Actualizados recientemente</option><option value="name">Nombre A–Z</option></select><button id="clearFilters" class="clear-btn">Limpiar filtros</button></div></section><section class="directory wrap"><div class="section-head"><div><strong id="resultCount">0</strong> perfiles encontrados</div><button id="createProfile" class="gold-btn">Crear / editar mi perfil</button></div><div id="cards" class="cards"></div></section><section class="info-strip"><div class="wrap strip-grid"><div><span>01</span><strong>Un perfil claro</strong><p>Un rol principal y hasta cinco etiquetas útiles, sin spam.</p></div><div><span>02</span><strong>Reel o guion</strong><p>Video embebido; los guionistas principales pueden mostrar PDF.</p></div><div><span>03</span><strong>Recomendaciones</strong><p>Una recomendación por usuario, siempre vinculada a un proyecto.</p></div><div><span>04</span><strong>Perfiles verificados</strong><p>Distinción administrada por Córdoba Casting para trayectoria acreditada.</p></div></div></section>`;demoBindDirectory()}
-function demoBindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0&&!av.checked||false);arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>a.p.id-b.p.id);else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>profileModal(+x.dataset.profile))};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>realAuthModal("register");draw()}
+function renderDirectory(){app.innerHTML=`<section class="hero wrap"><div><div class="eyebrow">RED PROFESIONAL AUDIOVISUAL · CÓRDOBA</div><h1>Encontrá a quienes<br><span>hacen posible cada proyecto.</span></h1><p>Buscá por rol principal, otros oficios, herramientas o habilidades. El rol principal siempre tiene prioridad en los resultados.</p></div><aside class="hero-brand-panel"><img src="assets/rr-logo.svg" alt="Red de Realizadores"><div class="cc"><span>UNA INICIATIVA DE</span><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"></div></aside></section><section class="search-panel wrap"><div class="search-line"><label>BUSCAR POR NOMBRE, ROL, HERRAMIENTA O PALABRA CLAVE</label><input id="searchInput" placeholder="Ej: dirección, guion, Blender, DaVinci, sonido…"></div><div class="filter-row"><select id="roleFilter"><option value="">Todos los roles</option>${roles.map(r=>`<option>${r}</option>`).join("")}</select><label class="check"><input id="availableFilter" type="checkbox"> Disponible ahora</label><label class="check"><input id="studentFilter" type="checkbox"> Acepta estudiantiles</label><label class="check"><input id="verifiedFilter" type="checkbox"> Solo verificados</label><select id="sortFilter"><option value="relevance">Orden: relevancia</option><option value="recommendations">Más recomendados</option><option value="recent">Actualizados recientemente</option><option value="name">Nombre A–Z</option></select><button id="clearFilters" class="clear-btn">Limpiar filtros</button></div></section><section class="directory wrap"><div class="section-head"><div><strong id="resultCount">0</strong> perfiles encontrados</div><button id="createProfile" class="gold-btn">Crear / editar mi perfil</button></div><div id="cards" class="cards"></div></section><section class="info-strip"><div class="wrap strip-grid"><div><span>01</span><strong>Un perfil claro</strong><p>Un rol principal y hasta cinco etiquetas útiles, sin spam.</p></div><div><span>02</span><strong>Reel o guion</strong><p>Video embebido; los guionistas principales pueden mostrar PDF.</p></div><div><span>03</span><strong>Recomendaciones</strong><p>Una recomendación por usuario, siempre vinculada a un proyecto.</p></div><div><span>04</span><strong>Perfiles verificados</strong><p>Distinción administrada por Córdoba Casting para trayectoria acreditada.</p></div></div></section>`;bindDirectory()}
+function bindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0&&!av.checked||false);arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>a.p.id-b.p.id);else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>profileModal(+x.dataset.profile))};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>realAuthModal("register");draw()}
 function cardHtml(p){return`<article class="card" data-profile="${p.id}"><div><div class="card-index"><span>RR / ${String(p.id).padStart(3,"0")}</span>${p.verified?verifiedBadge(false):""}${topBadge(p)}</div><div class="role">${esc(p.primary)}</div><div class="person">${esc(p.name)}</div><div class="secondary">${p.tags.map(esc).join(" · ")}</div><div class="status-row">${p.available?'<span class="pill on">DISPONIBLE</span>':'<span class="pill">NO DISPONIBLE</span>'}${p.students?'<span class="pill on">ESTUDIANTILES</span>':''}</div><div class="recommendation-count"><b>★ ${p.recommendationCount}</b> recomendaciones</div></div><div class="avatar">${initials(p.name)}</div></article>`}
-function demoProfileModal(id){const p=profiles.find(x=>x.id===id),embed=embedUrl(p.reel),isWriter=p.primary==="Guion";openModal(`<div class="eyebrow">PERFIL / RR ${String(p.id).padStart(3,"0")}</div><div class="profile-top"><div class="profile-avatar">${initials(p.name)}</div><div><div class="profile-role">${esc(p.primary)}</div><div class="profile-name">${esc(p.name)} ${p.verified?verifiedBadge(true):""}</div><div class="secondary" style="color:#74858a">${p.tags.map(esc).join(" · ")}</div></div><div class="profile-score"><strong>★ ${p.recommendationCount}</strong>RECOMENDACIONES${p.recommendationCount>=15?'<br><span style="color:#8d762d">MUY RECOMENDADO</span>':''}</div></div><div class="profile-section"><h4>Perfil</h4><p>${esc(p.bio)}</p><div class="status-row"><span class="pill on">${p.available?'DISPONIBLE AHORA':'NO DISPONIBLE'}</span>${p.students?'<span class="pill on">ACEPTA ESTUDIANTILES</span>':''}</div></div>${isWriter?writerMaterial(p):videoMaterial(p,embed)}<div class="profile-section"><h4>Recomendaciones</h4><div class="reviews">${p.recommendations.length?p.recommendations.map((r,ri)=>`<div class="review"><strong>${esc(r.author)}</strong><span>${esc(r.project)}</span><p>${esc(r.comment)}</p>${state.loggedIn&&r.authorId===state.currentUserId?`<div class="review-actions"><button data-edit-review="${ri}">Editar</button><button data-delete-review="${ri}">Eliminar</button></div>`:""}${state.isAdmin?`<div class="review-actions"><button class="danger" data-mod-review="${ri}">Quitar recomendación</button></div>`:""}</div>`).join(""):'<p>Todavía no tiene comentarios visibles.</p>'}</div><div class="profile-actions"><button id="recommendBtn" class="primary gold">★ Recomendar</button><button id="contactBtn" class="outline">Contactar</button></div></div><div class="profile-section"><h4>Actualización</h4><p style="font-size:12px">Perfil actualizado por última vez: <strong>${esc(p.updated)}</strong></p></div>`,true);document.getElementById("recommendBtn").onclick=()=>recommendModal(p);document.getElementById("contactBtn").onclick=()=>contactModal(p);
+function renderExistingProfileModal(id){const p=profiles.find(x=>x.id===id),embed=embedUrl(p.reel),isWriter=p.primary==="Guion";openModal(`<div class="eyebrow">PERFIL / RR ${String(p.id).padStart(3,"0")}</div><div class="profile-top"><div class="profile-avatar">${liveAvatarUrl(p)?`<img src="${liveAvatarUrl(p)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;display:block">`:initials(p.name)}</div><div><div class="profile-role">${esc(p.primary)}</div><div class="profile-name">${esc(p.name)} ${p.verified?verifiedBadge(true):""}</div><div class="secondary" style="color:#74858a">${p.tags.map(esc).join(" · ")}</div></div><div class="profile-score"><strong>★ ${p.recommendationCount}</strong>RECOMENDACIONES${p.isTopRecommended?'<br><span style="color:#8d762d">MUY RECOMENDADO</span>':''}</div></div><div class="profile-section"><h4>Perfil</h4><p>${esc(p.bio)}</p><div class="status-row"><span class="pill on">${p.available?'DISPONIBLE AHORA':'NO DISPONIBLE'}</span>${p.students?'<span class="pill on">ACEPTA ESTUDIANTILES</span>':''}</div></div>${isWriter?writerMaterial(p):videoMaterial(p,embed)}<div class="profile-section"><h4>Recomendaciones</h4><div class="reviews">${p.recommendations.length?p.recommendations.map((r,ri)=>`<div class="review"><strong>${esc(r.author)}</strong><span>${esc(r.project)}</span><p>${esc(r.comment)}</p>${state.loggedIn&&r.authorId===state.currentUserId?`<div class="review-actions"><button data-edit-review="${ri}">Editar</button><button data-delete-review="${ri}">Eliminar</button></div>`:""}${state.isAdmin?`<div class="review-actions"><button class="danger" data-mod-review="${ri}">Quitar recomendación</button></div>`:""}</div>`).join(""):'<p>Todavía no tiene comentarios visibles.</p>'}</div><div class="profile-actions"><button id="recommendBtn" class="primary gold">★ Recomendar</button><button id="contactBtn" class="outline">Contactar</button></div></div><div class="profile-section"><h4>Actualización</h4><p style="font-size:12px">Perfil actualizado por última vez: <strong>${esc(p.updated)}</strong></p></div>`,true);document.getElementById("recommendBtn").onclick=()=>recommendModal(p);document.getElementById("contactBtn").onclick=()=>contactModal(p);
 document.querySelectorAll("[data-edit-review]").forEach(b=>b.onclick=()=>editRecommendationModal(p,+b.dataset.editReview));
 document.querySelectorAll("[data-delete-review]").forEach(b=>b.onclick=()=>deleteRecommendation(p,+b.dataset.deleteReview));
 document.querySelectorAll("[data-mod-review]").forEach(b=>b.onclick=()=>deleteRecommendation(p,+b.dataset.modReview));const pdfBtn=document.getElementById("openPdfBtn");if(pdfBtn)pdfBtn.onclick=()=>{if(p.scriptPdfUrl)window.open(p.scriptPdfUrl,"_blank");else alert("Este PDF es un ejemplo visual del prototipo. En la versión conectada se abrirá el archivo almacenado en Supabase.")}}
+
+async function profileModal(id){
+  const p=profiles.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  const {data,error}=await sb.from("recommendations")
+    .select("project_name,comment,recommender_id,created_at")
+    .eq("recommended_id",id)
+    .order("created_at",{ascending:false});
+  if(!error){
+    p.recommendations=(data||[]).map(r=>({
+      author:"Realizador",
+      authorId:r.recommender_id,
+      project:r.project_name,
+      comment:r.comment
+    }));
+  }
+  renderExistingProfileModal(id);
+}
+
 function videoMaterial(p,embed){return`<div class="profile-section"><h4>Reel / portfolio audiovisual</h4><div class="video-card">${embed?`<iframe src="${embed}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`:`<div class="play-placeholder"><div><div class="play-icon">▶</div><small>VIDEO NO DISPONIBLE</small></div></div>`}</div></div>`}
 function writerMaterial(p){return`<div class="profile-section"><h4>Muestra de guion</h4>${p.scriptPdfName?`<div class="pdf-card"><div><strong>PDF · ${esc(p.scriptPdfName)}</strong><small>Material de escritura del perfil</small></div><button id="openPdfBtn">Ver PDF</button></div>`:`<p>Este guionista todavía no cargó una muestra en PDF.</p>`}</div>`}
 function recommendModal(p){if(!state.loggedIn){realAuthModal("login");return}if(p.id===state.currentUserId){openModal(`<div class="eyebrow">RECOMENDACIÓN</div><h2>No podés recomendar tu propio perfil</h2><p>Las recomendaciones están pensadas para personas con las que trabajaste.</p>`);return}if(p.recommendations.some(r=>r.authorId===state.currentUserId)){openModal(`<div class="eyebrow">RECOMENDACIÓN</div><h2>Ya recomendaste a ${esc(p.name)}</h2><p>Cada usuario puede recomendar a una persona una sola vez.</p>`);return}openModal(`<div class="eyebrow">RECOMENDACIÓN</div><h2>Recomendar a ${esc(p.name)}</h2><form id="recommendForm" class="form-grid"><label>¿En qué proyecto trabajaste con el realizador?<input id="projectName" maxlength="55" required placeholder="Nombre del proyecto"></label><label>Comentario breve<textarea id="reviewComment" maxlength="120" required placeholder="Máximo 120 caracteres"></textarea><span id="reviewCount" class="char-count">0 / 120</span></label><div class="profile-actions"><button class="primary gold">Publicar recomendación</button></div></form>`);const ta=document.getElementById("reviewComment");ta.oninput=()=>document.getElementById("reviewCount").textContent=`${ta.value.length} / 120`;document.getElementById("recommendForm").onsubmit=e=>{e.preventDefault();p.recommendationCount++;p.recommendations.unshift({author:profiles.find(x=>x.id===state.currentUserId).name,authorId:state.currentUserId,project:document.getElementById("projectName").value,comment:ta.value});profileModal(p.id)}}
@@ -71,9 +90,7 @@ function demoBindProfileEdit(){const p=profiles.find(x=>x.id===state.currentUser
 function demoPasswordPanel(){document.getElementById("accountPanel").innerHTML=`<form id="passwordForm" class="form-grid"><label>Contraseña actual<input type="password" required></label><label>Nueva contraseña<input type="password" minlength="8" required></label><label>Repetir nueva contraseña<input type="password" minlength="8" required></label><button class="primary">Cambiar contraseña</button></form>`;document.getElementById("passwordForm").onsubmit=e=>{e.preventDefault();openModal(`<h2>Contraseña actualizada</h2><p>En la versión conectada, este cambio se hará mediante Supabase Auth.</p>`)}}
 
 
-let realDirectoryCache=[];
-
-async function fetchRealDirectory(){
+async function loadPublicProfilesIntoExistingUI(){
   const {data,error}=await sb
     .from("profiles")
     .select(`
@@ -87,8 +104,10 @@ async function fetchRealDirectory(){
       reel_url,
       script_pdf_path,
       verified,
+      is_visible,
+      status,
       profile_updated_at,
-      roles:primary_role_id(id,name),
+      roles:primary_role_id(name),
       profile_tags(tag)
     `)
     .eq("status","approved")
@@ -96,195 +115,45 @@ async function fetchRealDirectory(){
     .order("profile_updated_at",{ascending:false});
 
   if(error){
-    console.error("directory",error);
-    return {data:[],error};
-  }
-
-  const stats=await sb.from("profile_recommendation_stats").select("*");
-  const statsMap=new Map((stats.data||[]).map(x=>[x.profile_id,x]));
-
-  return {
-    data:(data||[]).map(p=>({
-      ...p,
-      tags:(p.profile_tags||[]).map(x=>x.tag),
-      recommendation_count:Number(statsMap.get(p.id)?.recommendation_count||0),
-      is_top_recommended:Boolean(statsMap.get(p.id)?.is_top_recommended)
-    })),
-    error:null
-  };
-}
-
-function avatarPublicUrl(path){
-  if(!path)return null;
-  const {data}=sb.storage.from("avatars").getPublicUrl(path);
-  return data?.publicUrl||null;
-}
-
-function realDirectoryCard(p){
-  const avatar=avatarPublicUrl(p.avatar_path);
-  const tags=(p.tags||[]).slice(0,5);
-  return `<article class="person-card" data-real-profile="${p.id}">
-    <div class="person-top">
-      <div class="person-avatar ${avatar?"has-image":""}">
-        ${avatar?`<img src="${avatar}" alt="${esc(p.full_name||"Perfil")}" loading="lazy">`:initials(p.full_name||"RR")}
-      </div>
-      <div class="person-status">${p.available?'<span class="status-dot"></span> DISPONIBLE':"NO DISPONIBLE"}</div>
-    </div>
-    <div class="person-role">${esc(p.roles?.name||"Sin rol")}</div>
-    <h3>${esc(p.full_name||"(Sin nombre)")}</h3>
-    <div class="secondary">${tags.map(esc).join(" · ")}</div>
-    <div class="card-footer">
-      <div class="role-tags">${p.accepts_student_projects?'<span class="tag">ESTUDIANTILES</span>':""}${p.verified?verifiedBadge(false):""}${p.is_top_recommended?'<span class="top-badge">★ MUY RECOMENDADO</span>':""}</div>
-      <span class="recommend-count">★ ${p.recommendation_count}</span>
-    </div>
-  </article>`;
-}
-
-async function renderRealDirectory(){
-  app.innerHTML=`<section class="directory-hero wrap">
-    <div class="eyebrow">RED DE REALIZADORES / CÓRDOBA</div>
-    <h1 class="page-title">Encontrá a quienes hacen posible cada proyecto.</h1>
-    <p class="lead">Buscá por nombre, rol, especialidad o herramienta.</p>
-  </section>
-  <section class="directory-controls wrap">
-    <div class="search-row">
-      <input id="realSearchInput" class="search-input" placeholder="Buscar por nombre, rol o palabra clave…">
-      <select id="realRoleFilter"><option value="">Todos los roles</option>${realState.roles.map(r=>`<option>${esc(r.name)}</option>`).join("")}</select>
-      <select id="realSortFilter">
-        <option value="relevance">Más relevantes</option>
-        <option value="recommendations">Más recomendaciones</option>
-        <option value="recent">Actualizados recientemente</option>
-        <option value="name">Nombre</option>
-      </select>
-    </div>
-    <div class="filter-row">
-      <label class="check"><input id="realAvailableFilter" type="checkbox"> Disponible actualmente</label>
-      <label class="check"><input id="realStudentFilter" type="checkbox"> Acepta estudiantiles</label>
-      <label class="check"><input id="realVerifiedFilter" type="checkbox"> Verificados</label>
-    </div>
-  </section>
-  <section class="people wrap">
-    <div id="realDirectoryCount" class="directory-count">Cargando realizadores…</div>
-    <div id="realPeopleGrid" class="people-grid"></div>
-  </section>`;
-
-  const result=await fetchRealDirectory();
-  if(result.error){
-    document.getElementById("realDirectoryCount").textContent="No se pudo cargar el directorio.";
+    console.error("public profiles",error);
+    profiles=[];
     return;
   }
-  realDirectoryCache=result.data;
-  bindRealDirectory();
-}
 
-function realMatchRank(p,q,roleFilter){
-  let rank=0;
-  const query=(q||"").trim().toLowerCase();
-  const role=(p.roles?.name||"").toLowerCase();
-  const name=(p.full_name||"").toLowerCase();
-  const tags=(p.tags||[]).map(x=>x.toLowerCase());
+  const {data:stats}=await sb.from("profile_recommendation_stats").select("*");
+  const statsMap=new Map((stats||[]).map(x=>[x.profile_id,x]));
 
-  if(roleFilter && p.roles?.name!==roleFilter)return -1;
-  if(!query)return 0;
-
-  if(role===query)rank+=100;
-  else if(role.includes(query))rank+=70;
-
-  if(name===query)rank+=80;
-  else if(name.includes(query))rank+=50;
-
-  tags.forEach(t=>{
-    if(t===query)rank+=35;
-    else if(t.includes(query))rank+=20;
+  profiles=(data||[]).map((p,i)=>{
+    const stat=statsMap.get(p.id)||{};
+    return {
+      id:p.id,
+      name:p.full_name||"(Sin nombre)",
+      primary:p.roles?.name||"Sin rol",
+      tags:(p.profile_tags||[]).map(x=>x.tag),
+      available:Boolean(p.available),
+      students:Boolean(p.accepts_student_projects),
+      bio:p.bio||"",
+      reel:p.reel_url||"",
+      scriptPdfName:p.script_pdf_path?"Muestra de guion.pdf":"",
+      scriptPdfUrl:"",
+      updated:new Date(p.profile_updated_at).toLocaleDateString("es-AR"),
+      verified:Boolean(p.verified),
+      recommendations:[],
+      recommendationCount:Number(stat.recommendation_count||0),
+      isTopRecommended:Boolean(stat.is_top_recommended),
+      avatarPath:p.avatar_path||null,
+      status:p.status,
+      visibility:"visible",
+      contactType:null,
+      contactValue:null
+    };
   });
-
-  return rank>0?rank:-1;
 }
 
-function bindRealDirectory(){
-  const q=document.getElementById("realSearchInput"),
-        rf=document.getElementById("realRoleFilter"),
-        sort=document.getElementById("realSortFilter"),
-        av=document.getElementById("realAvailableFilter"),
-        st=document.getElementById("realStudentFilter"),
-        vf=document.getElementById("realVerifiedFilter"),
-        grid=document.getElementById("realPeopleGrid"),
-        count=document.getElementById("realDirectoryCount");
-
-  const draw=()=>{
-    let arr=realDirectoryCache
-      .map(p=>({p,rank:realMatchRank(p,q.value,rf.value)}))
-      .filter(x=>x.rank>=0)
-      .filter(x=>!av.checked||x.p.available)
-      .filter(x=>!st.checked||x.p.accepts_student_projects)
-      .filter(x=>!vf.checked||x.p.verified);
-
-    if(sort.value==="recommendations"){
-      arr.sort((a,b)=>b.p.recommendation_count-a.p.recommendation_count||b.rank-a.rank);
-    }else if(sort.value==="recent"){
-      arr.sort((a,b)=>new Date(b.p.profile_updated_at)-new Date(a.p.profile_updated_at));
-    }else if(sort.value==="name"){
-      arr.sort((a,b)=>(a.p.full_name||"").localeCompare(b.p.full_name||""));
-    }else{
-      arr.sort((a,b)=>b.rank-a.rank||b.p.recommendation_count-a.p.recommendation_count);
-    }
-
-    count.textContent=`${arr.length} realizador${arr.length===1?"":"es"}`;
-    grid.innerHTML=arr.length?arr.map(x=>realDirectoryCard(x.p)).join(""):`<div class="empty-state">No encontramos perfiles con esos filtros.</div>`;
-    document.querySelectorAll("[data-real-profile]").forEach(card=>card.onclick=()=>realPublicProfileModal(card.dataset.realProfile));
-  };
-
-  [q,rf,sort,av,st,vf].forEach(el=>{
-    el.addEventListener(el===q?"input":"change",draw);
-  });
-  draw();
-}
-
-async function realPublicProfileModal(id){
-  const p=realDirectoryCache.find(x=>x.id===id);
-  if(!p)return;
-  const embed=embedUrl(p.reel_url);
-  const avatar=avatarPublicUrl(p.avatar_path);
-  let recommendations=[];
-  const recRes=await sb.from("recommendations").select("project_name,comment,created_at,recommender_id").eq("recommended_id",id).order("created_at",{ascending:false}).limit(10);
-  if(!recRes.error) recommendations=recRes.data||[];
-
-  openModal(`<div class="eyebrow">PERFIL PROFESIONAL</div>
-    <div class="profile-top">
-      <div class="profile-avatar ${avatar?"has-image":""}">${avatar?`<img src="${avatar}" alt="${esc(p.full_name||"Perfil")}">`:initials(p.full_name||"RR")}</div>
-      <div>
-        <div class="profile-role">${esc(p.roles?.name||"Sin rol")}</div>
-        <div class="profile-name">${esc(p.full_name||"(Sin nombre)")} ${p.verified?verifiedBadge(true):""}</div>
-        <div class="secondary" style="color:#74858a">${(p.tags||[]).map(esc).join(" · ")}</div>
-      </div>
-      <div class="profile-score"><strong>★ ${p.recommendation_count}</strong>RECOMENDACIONES${p.is_top_recommended?'<br><span class="top-badge">★ MUY RECOMENDADO</span>':""}</div>
-    </div>
-
-    <div class="profile-section">
-      <h4>Perfil</h4>
-      <p>${esc(p.bio||"")}</p>
-      <div class="status-row">
-        <span class="pill ${p.available?"on":""}">${p.available?"DISPONIBLE AHORA":"NO DISPONIBLE"}</span>
-        ${p.accepts_student_projects?'<span class="pill on">ACEPTA ESTUDIANTILES</span>':""}
-      </div>
-    </div>
-
-    ${p.roles?.name==="Guion"
-      ? `<div class="profile-section"><h4>Muestra de guion</h4><p>${p.script_pdf_path?"Muestra PDF disponible.":"Este perfil todavía no publicó muestra de guion."}</p></div>`
-      : `<div class="profile-section"><h4>Reel / portfolio audiovisual</h4>${embed?`<div class="video-card"><iframe src="${embed}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`:"<p>Este perfil todavía no publicó reel.</p>"}</div>`
-    }
-
-    <div class="profile-section">
-      <h4>Recomendaciones</h4>
-      <div class="reviews">
-        ${recommendations.length?recommendations.map(r=>`<div class="review"><span>${esc(r.project_name)}</span><p>${esc(r.comment)}</p></div>`).join(""):"<p>Todavía no tiene recomendaciones.</p>"}
-      </div>
-    </div>
-
-    <div class="profile-section">
-      <h4>Actualización</h4>
-      <p style="font-size:12px">Perfil actualizado por última vez: <strong>${new Date(p.profile_updated_at).toLocaleDateString("es-AR")}</strong></p>
-    </div>`,true);
+function liveAvatarUrl(p){
+  if(!p?.avatarPath)return null;
+  const {data}=sb.storage.from("avatars").getPublicUrl(p.avatarPath);
+  return data?.publicUrl||null;
 }
 
 // =========================================================
@@ -570,11 +439,11 @@ async function drawRealAdmin(filter){
 
 function bindRealAdminActions(filter){
   document.querySelectorAll("[data-real-review]").forEach(b=>b.onclick=()=>realAdminPreview(b.dataset.realReview));
-  document.querySelectorAll("[data-real-approve]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.realApprove,make_verified:false});if(error)alert(error.message);else drawRealAdmin(filter)});
-  document.querySelectorAll("[data-real-approve-verify]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.realApproveVerify,make_verified:true});if(error)alert(error.message);else drawRealAdmin(filter)});
-  document.querySelectorAll("[data-real-reject]").forEach(b=>b.onclick=async()=>{const reason=prompt("Motivo de rechazo:");if(!reason)return;const {error}=await sb.rpc("admin_reject_profile",{target_profile:b.dataset.realReject,reason});if(error)alert(error.message);else drawRealAdmin(filter)});
-  document.querySelectorAll("[data-real-verify]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_verified",{target_profile:b.dataset.realVerify,value:b.dataset.value==="true"});if(error)alert(error.message);else drawRealAdmin(filter)});
-  document.querySelectorAll("[data-real-visible]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_visibility",{target_profile:b.dataset.realVisible,value:b.dataset.value==="true"});if(error)alert(error.message);else drawRealAdmin(filter)});
+  document.querySelectorAll("[data-real-approve]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.realApprove,make_verified:false});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
+  document.querySelectorAll("[data-real-approve-verify]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_approve_profile",{target_profile:b.dataset.realApproveVerify,make_verified:true});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
+  document.querySelectorAll("[data-real-reject]").forEach(b=>b.onclick=async()=>{const reason=prompt("Motivo de rechazo:");if(!reason)return;const {error}=await sb.rpc("admin_reject_profile",{target_profile:b.dataset.realReject,reason});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
+  document.querySelectorAll("[data-real-verify]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_verified",{target_profile:b.dataset.realVerify,value:b.dataset.value==="true"});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
+  document.querySelectorAll("[data-real-visible]").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_visibility",{target_profile:b.dataset.realVisible,value:b.dataset.value==="true"});if(error)alert(error.message);else {await loadPublicProfilesIntoExistingUI();drawRealAdmin(filter)}});
 }
 
 async function realAdminPreview(id){
@@ -593,7 +462,8 @@ async function realAdminPreview(id){
 async function bootstrapReal(){
   await loadRealRoles();
   await loadRealAccount();
-  sb.auth.onAuthStateChange(async()=>{await loadRealAccount()});
+  await loadPublicProfilesIntoExistingUI();
+  sb.auth.onAuthStateChange(async()=>{await loadRealAccount();await loadPublicProfilesIntoExistingUI();if(state.route==="realizadores")renderDirectory()});
   route();
 }
 
