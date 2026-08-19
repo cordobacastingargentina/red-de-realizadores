@@ -1,19 +1,21 @@
-# Red de Realizadores — V0.4
+# Red de Realizadores — V0.5
 
-Prototipo navegable con datos demo.
+Prototipo navegable previo a la conexión con Supabase.
 
-## Incluye
-- Nueva identidad R | R más liviana y logo de Córdoba Casting en blanco.
-- 48 perfiles demo con buscador, filtros y orden por recomendaciones.
-- Un solo reel por perfil, validado como YouTube o Vimeo y reproducido embebido.
-- Recomendaciones con proyecto + comentario de hasta 120 caracteres.
-- Búsquedas de realizadores con hasta 3 roles, descripción, caducidad máxima de 10 días, flags Estudiantil y Remunerado.
-- Postulación con el propio perfil y acceso directo al reel.
-- Edición de perfil, disponibilidad, proyectos estudiantiles y cambio de contraseña (simulados).
-- Recursos y Formación Córdoba Casting.
+## Cambios principales
+- Rol principal con prioridad real en búsqueda.
+- Hasta 5 roles secundarios / palabras clave libres por perfil.
+- Búsqueda por herramientas como Blender, DaVinci, Pro Tools, etc.
+- Si el rol principal es **Guion**, se desactiva el reel y se habilita un único PDF.
+- Reel único de YouTube o Vimeo, embebido en la plataforma.
+- Recomendaciones limitadas a una por usuario y perfil.
+- Distintivo dorado de perfil verificado, administrado por Córdoba Casting.
+- Indicador visual para perfiles muy recomendados.
+- Formación rediseñada con la paleta bordó/púrpura/crema del Aula Virtual.
+- Búsquedas de proyectos con hasta 3 roles, flags Estudiantil/Remunerado y caducidad máxima de 10 días.
 
-## Probar
-Abrir `index.html`. Para acciones que requieren cuenta, usar el ingreso demo.
+## Acceso demo
+Email: demo@redrealizadores.com
+Contraseña: demo123
 
-## Próximo paso
-Conectar Supabase Auth + Database + RLS y persistir recomendaciones, búsquedas, postulaciones y perfiles.
+Abrir `index.html` en el navegador.
