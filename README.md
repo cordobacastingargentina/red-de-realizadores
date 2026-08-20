@@ -98,3 +98,26 @@ Corrección de integración:
 - Admin mantiene ocultar/mostrar/eliminar postulaciones.
 - El listado público de búsquedas deja de depender de la vista `active_job_posts` y consulta directamente `job_posts` con `expires_at > ahora`, respetando RLS.
 - Esto evita que una búsqueda válida desaparezca por problemas de la vista intermedia.
+
+
+## V0.9.0
+- Foto de perfil real en Storage avatars.
+- Compresión automática a WEBP, máximo 800 px.
+- Reemplazar/quitar una única foto.
+- Foto visible en directorio, perfil y revisión admin.
+- PDF de Guion privado con URL firmada por 5 minutos.
+- Admin también puede revisar el PDF.
+- Requiere ejecutar 05_public_script_access.sql.
+
+## V0.9.1 — Notificaciones
+- Campanita visible únicamente con sesión iniciada.
+- Contador de notificaciones no leídas.
+- Notificación real cuando Córdoba Casting aprueba un perfil.
+- Notificación real cuando Córdoba Casting rechaza un perfil.
+- Notificación real cuando alguien se postula a una búsqueda del usuario.
+- Click en aprobación/rechazo abre la cuenta.
+- Click en postulación lleva a la búsqueda correspondiente.
+- Marcar individualmente como leída al abrir.
+- Opción “Marcar todas como leídas”.
+- Se limita deliberadamente a eventos importantes; recomendaciones y contacto no generan notificaciones.
+- Requiere ejecutar `06_notifications.sql`.

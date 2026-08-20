@@ -26,7 +26,10 @@ const jobs=[
 const state={isAdmin:false,route:"realizadores",loggedIn:false,currentUserId:1};
 const app=document.getElementById("app"),modal=document.getElementById("modal"),backdrop=document.getElementById("modalBackdrop"),modalContent=document.getElementById("modalContent"),accountBtn=document.getElementById("openAccountBtn");
 const adminNavLink=document.getElementById("adminNavLink");
-const realState={session:null,user:null,isAdmin:false,profile:null,privateProfile:null,moderation:null,tags:[],roles:[]};
+const notificationsBtn=document.getElementById("notificationsBtn");
+const notificationCount=document.getElementById("notificationCount");
+
+const realState={session:null,user:null,isAdmin:false,profile:null,privateProfile:null,moderation:null,tags:[],roles:[],notifications:[]};
 
 const esc=s=>String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 const initials=n=>n.split(" ").map(x=>x[0]).slice(0,2).join("");
@@ -35,12 +38,13 @@ function verifiedBadge(label=true){return`<span class="verified" title="Perfil v
 function topBadge(p){return p.isTopRecommended?`<span class="top-badge">★ MUY RECOMENDADO</span>`:""}
 function openModal(html,wide=false){modalContent.innerHTML=html;modal.classList.toggle("wide",wide);modal.classList.remove("hidden");backdrop.classList.remove("hidden")}
 function closeModal(){modal.classList.add("hidden");backdrop.classList.add("hidden");modal.classList.remove("wide")}
-document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>realAccountModal();window.addEventListener("hashchange",route);document.querySelectorAll("[data-route]").forEach(a=>a.addEventListener("click",()=>{}));
+document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>realAccountModal();
+if(notificationsBtn)notificationsBtn.onclick=notificationsModal;window.addEventListener("hashchange",route);document.querySelectorAll("[data-route]").forEach(a=>a.addEventListener("click",()=>{}));
 function route(){state.route=(location.hash||"#realizadores").slice(1);({realizadores:renderDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining,administracion:renderAdministration}[state.route]||renderDirectory)()}
 function matchRank(p,q,roleFilter){let rank=0;const qq=q.trim().toLowerCase();if(roleFilter){if(p.primary===roleFilter)rank+=120;else if(p.tags.some(t=>t.toLowerCase()===roleFilter.toLowerCase()))rank+=55;else return -1}if(!qq)return rank;const primary=p.primary.toLowerCase(),tags=p.tags.map(t=>t.toLowerCase()),name=p.name.toLowerCase(),bio=p.bio.toLowerCase();if(primary===qq)rank+=200;else if(primary.includes(qq))rank+=150;if(tags.some(t=>t===qq))rank+=100;else if(tags.some(t=>t.includes(qq)))rank+=75;if(name.includes(qq))rank+=60;if(bio.includes(qq))rank+=20;return rank||-1}
 function renderDirectory(){app.innerHTML=`<section class="hero wrap"><div><div class="eyebrow">RED PROFESIONAL AUDIOVISUAL · CÓRDOBA</div><h1>Encontrá a quienes<br><span>hacen posible cada proyecto.</span></h1><p>Buscá por rol principal, otros oficios, herramientas o habilidades. El rol principal siempre tiene prioridad en los resultados.</p></div><aside class="hero-brand-panel"><img src="assets/rr-logo.svg" alt="Red de Realizadores"><div class="cc"><span>UNA INICIATIVA DE</span><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"></div></aside></section><section class="search-panel wrap"><div class="search-line"><label>BUSCAR POR NOMBRE, ROL, HERRAMIENTA O PALABRA CLAVE</label><input id="searchInput" placeholder="Ej: dirección, guion, Blender, DaVinci, sonido…"></div><div class="filter-row"><select id="roleFilter"><option value="">Todos los roles</option>${roles.map(r=>`<option>${r}</option>`).join("")}</select><label class="check"><input id="availableFilter" type="checkbox"> Disponible ahora</label><label class="check"><input id="studentFilter" type="checkbox"> Acepta estudiantiles</label><label class="check"><input id="verifiedFilter" type="checkbox"> Solo verificados</label><select id="sortFilter"><option value="relevance">Orden: relevancia</option><option value="recommendations">Más recomendados</option><option value="recent">Actualizados recientemente</option><option value="name">Nombre A–Z</option></select><button id="clearFilters" class="clear-btn">Limpiar filtros</button></div></section><section class="directory wrap"><div class="section-head"><div><strong id="resultCount">0</strong> perfiles encontrados</div><button id="createProfile" class="gold-btn">Crear / editar mi perfil</button></div><div id="cards" class="cards"></div></section><section class="info-strip"><div class="wrap strip-grid"><div><span>01</span><strong>Un perfil claro</strong><p>Un rol principal y hasta cinco etiquetas útiles, sin spam.</p></div><div><span>02</span><strong>Reel o guion</strong><p>Video embebido; los guionistas principales pueden mostrar PDF.</p></div><div><span>03</span><strong>Recomendaciones</strong><p>Una recomendación por usuario, siempre vinculada a un proyecto.</p></div><div><span>04</span><strong>Perfiles verificados</strong><p>Distinción administrada por Córdoba Casting para trayectoria acreditada.</p></div></div></section>`;bindDirectory()}
 function bindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0&&!av.checked||false);arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>new Date(b.p.updatedAt||0)-new Date(a.p.updatedAt||0));else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>profileModal(x.dataset.profile))};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>realState.user?realAccountModal():realAuthModal("register");draw()}
-function cardHtml(p){return`<article class="card" data-profile="${p.id}"><div><div class="card-index"><span>PERFIL PROFESIONAL</span>${p.verified?verifiedBadge(false):""}${topBadge(p)}</div><div class="role">${esc(p.primary)}</div><div class="person">${esc(p.name)}</div><div class="secondary">${p.tags.map(esc).join(" · ")}</div><div class="status-row">${p.available?'<span class="pill on">DISPONIBLE</span>':'<span class="pill">NO DISPONIBLE</span>'}${p.students?'<span class="pill on">ESTUDIANTILES</span>':''}</div><div class="recommendation-count"><b>★ ${p.recommendationCount}</b> recomendaciones</div></div><div class="avatar">${initials(p.name)}</div></article>`}
+function cardHtml(p){return`<article class="card" data-profile="${p.id}"><div><div class="card-index"><span>PERFIL PROFESIONAL</span>${p.verified?verifiedBadge(false):""}${topBadge(p)}</div><div class="role">${esc(p.primary)}</div><div class="person">${esc(p.name)}</div><div class="secondary">${p.tags.map(esc).join(" · ")}</div><div class="status-row">${p.available?'<span class="pill on">DISPONIBLE</span>':'<span class="pill">NO DISPONIBLE</span>'}${p.students?'<span class="pill on">ESTUDIANTILES</span>':''}</div><div class="recommendation-count"><b>★ ${p.recommendationCount}</b> recomendaciones</div></div><div class="avatar">${liveAvatarUrl(p)?`<img src="${liveAvatarUrl(p)}" alt="${esc(p.name)}">`:initials(p.name)}</div></article>`}
 function renderExistingProfileModal(id){const p=profiles.find(x=>String(x.id)===String(id)),embed=embedUrl(p.reel),isWriter=p.primary==="Guion";openModal(`<div class="eyebrow">RED DE REALIZADORES / PERFIL</div><div class="profile-top"><div class="profile-avatar">${liveAvatarUrl(p)?`<img src="${liveAvatarUrl(p)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;display:block">`:initials(p.name)}</div><div><div class="profile-role">${esc(p.primary)}</div><div class="profile-name">${esc(p.name)} ${p.verified?verifiedBadge(true):""}</div><div class="secondary" style="color:#74858a">${p.tags.map(esc).join(" · ")}</div></div><div class="profile-score"><strong>★ ${p.recommendationCount}</strong>RECOMENDACIONES${p.isTopRecommended?'<br><span style="color:#8d762d">MUY RECOMENDADO</span>':''}</div></div><div class="profile-section"><h4>Perfil</h4><p>${esc(p.bio)}</p><div class="status-row"><span class="pill on">${p.available?'DISPONIBLE AHORA':'NO DISPONIBLE'}</span>${p.students?'<span class="pill on">ACEPTA ESTUDIANTILES</span>':''}</div></div>${isWriter?writerMaterial(p):videoMaterial(p,embed)}<div class="profile-section"><h4>Recomendaciones</h4><div class="reviews">${p.recommendations.length?p.recommendations.map((r,ri)=>`<div class="review"><strong>${esc(r.author)}</strong><span>${esc(r.project)}</span><p>${esc(r.comment)}</p>${state.loggedIn&&r.authorId===state.currentUserId?`<div class="review-actions"><button data-edit-review="${ri}">Editar</button><button data-delete-review="${ri}">Eliminar</button></div>`:""}${state.isAdmin?`<div class="review-actions"><button class="danger" data-mod-review="${ri}">Quitar recomendación</button></div>`:""}</div>`).join(""):'<p>Todavía no tiene comentarios visibles.</p>'}</div><div class="profile-actions"><button id="recommendBtn" class="primary gold">★ Recomendar</button><button id="contactBtn" class="outline">Contactar</button></div></div><div class="profile-section"><h4>Actualización</h4><p style="font-size:12px">Perfil actualizado por última vez: <strong>${esc(p.updated)}</strong></p></div>`,true);const recommendBtn=document.getElementById("recommendBtn");
 if(realState.user && p.recommendations.some(r=>String(r.authorId)===String(realState.user.id))){
   recommendBtn.textContent="★ Editar mi recomendación";
@@ -48,7 +52,7 @@ if(realState.user && p.recommendations.some(r=>String(r.authorId)===String(realS
 recommendBtn.onclick=()=>recommendModal(p);document.getElementById("contactBtn").onclick=()=>contactModal(p);
 
 
-document.querySelectorAll("[data-mod-review]").forEach(b=>b.onclick=()=>deleteRecommendation(p,+b.dataset.modReview));const pdfBtn=document.getElementById("openPdfBtn");if(pdfBtn)pdfBtn.onclick=()=>{if(p.scriptPdfUrl)window.open(p.scriptPdfUrl,"_blank");else alert("Este PDF es un ejemplo visual del prototipo. En la versión conectada se abrirá el archivo almacenado en Supabase.")}}
+document.querySelectorAll("[data-mod-review]").forEach(b=>b.onclick=()=>deleteRecommendation(p,+b.dataset.modReview));const pdfBtn=document.getElementById("openPdfBtn");if(pdfBtn)pdfBtn.onclick=()=>openSignedScript(p.scriptPdfPath||p.scriptPdfUrl)}
 
 async function profileModal(id){
   const p=profiles.find(x=>String(x.id)===String(id));
@@ -608,6 +612,7 @@ async function loadPublicProfilesIntoExistingUI(){
       bio:p.bio||"",
       reel:p.reel_url||"",
       scriptPdfName:p.script_pdf_path?"Muestra de guion.pdf":"",
+      scriptPdfPath:p.script_pdf_path||null,
       scriptPdfUrl:"",
       updated:new Date(p.profile_updated_at).toLocaleDateString("es-AR"),updatedAt:p.profile_updated_at,
       verified:Boolean(p.verified),
@@ -665,6 +670,7 @@ async function loadRealAccount(){
   realState.moderation=m.data||null;
   realState.tags=(t.data||[]).map(x=>x.tag);
   realState.isAdmin=ur.data?.role==="admin";
+  await loadNotifications();
   updateRealAccountButton();
 }
 
@@ -672,14 +678,142 @@ function updateRealAccountButton(){
   if(!realState.user){
     accountBtn.textContent="Ingresar";
     if(adminNavLink)adminNavLink.hidden=true;
+    if(notificationsBtn)notificationsBtn.hidden=true;
+    if(notificationCount)notificationCount.hidden=true;
     return;
   }
+
   accountBtn.textContent="Mi cuenta";
   if(adminNavLink)adminNavLink.hidden=!realState.isAdmin;
+  if(notificationsBtn)notificationsBtn.hidden=false;
+
+  const unread=(realState.notifications||[]).filter(n=>!n.is_read).length;
+  if(notificationCount){
+    notificationCount.textContent=unread>99?"99+":String(unread);
+    notificationCount.hidden=unread===0;
+  }
 }
 
 function authNotice(message,type=""){
   return `<div class="notice ${type}">${esc(message)}</div>`;
+}
+
+
+async function loadNotifications(){
+  if(!realState.user){
+    realState.notifications=[];
+    return;
+  }
+
+  const {data,error}=await sb
+    .from("notifications")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if(error){
+    console.error("notifications",error);
+    realState.notifications=[];
+    return;
+  }
+
+  realState.notifications=data||[];
+}
+
+function notificationIcon(type){
+  if(type==="profile_approved")return "✓";
+  if(type==="profile_rejected")return "!";
+  if(type==="job_application")return "→";
+  return "•";
+}
+
+function timeAgoNotification(date){
+  const ms=Date.now()-new Date(date).getTime();
+  const mins=Math.max(0,Math.floor(ms/60000));
+  if(mins<1)return "Ahora";
+  if(mins<60)return `Hace ${mins} min`;
+  const hours=Math.floor(mins/60);
+  if(hours<24)return `Hace ${hours} h`;
+  const days=Math.floor(hours/24);
+  return `Hace ${days} día${days===1?"":"s"}`;
+}
+
+async function notificationsModal(){
+  if(!realState.user){
+    realAuthModal("login");
+    return;
+  }
+
+  await loadNotifications();
+  updateRealAccountButton();
+
+  openModal(`<div class="eyebrow">NOTIFICACIONES</div>
+    <div class="notifications-head">
+      <h2>Actividad reciente</h2>
+      ${realState.notifications.some(n=>!n.is_read)?'<button id="markAllNotifications" class="outline mini-action">Marcar todas como leídas</button>':""}
+    </div>
+
+    <div class="notifications-list">
+      ${realState.notifications.length
+        ? realState.notifications.map(n=>`
+          <article class="notification-item ${n.is_read?"":"unread"}" data-notification-id="${n.id}">
+            <div class="notification-symbol">${notificationIcon(n.type)}</div>
+            <div class="notification-copy">
+              <div class="notification-title-row">
+                <strong>${esc(n.title)}</strong>
+                ${!n.is_read?'<span class="unread-dot"></span>':""}
+              </div>
+              <p>${esc(n.message)}</p>
+              <small>${timeAgoNotification(n.created_at)}</small>
+            </div>
+          </article>`).join("")
+        : '<div class="empty-notifications"><strong>No tenés notificaciones todavía.</strong><p>Las aprobaciones, rechazos y nuevas postulaciones aparecerán acá.</p></div>'
+      }
+    </div>`);
+
+  const markAll=document.getElementById("markAllNotifications");
+  if(markAll){
+    markAll.onclick=async()=>{
+      const {error}=await sb.rpc("mark_all_notifications_read");
+      if(error){alert(error.message);return}
+      await loadNotifications();
+      updateRealAccountButton();
+      notificationsModal();
+    };
+  }
+
+  document.querySelectorAll("[data-notification-id]").forEach(item=>{
+    item.onclick=async()=>{
+      const id=Number(item.dataset.notificationId);
+      const n=realState.notifications.find(x=>Number(x.id)===id);
+      if(!n)return;
+
+      if(!n.is_read){
+        await sb.from("notifications").update({is_read:true}).eq("id",id);
+        n.is_read=true;
+        updateRealAccountButton();
+      }
+
+      if(n.type==="profile_rejected"){
+        closeModal();
+        realAccountModal();
+        return;
+      }
+
+      if(n.type==="profile_approved"){
+        closeModal();
+        realAccountModal();
+        return;
+      }
+
+      if(n.type==="job_application" && n.related_job_post_id){
+        closeModal();
+        location.hash="#busquedas";
+        await renderJobs();
+        await realJobModal(Number(n.related_job_post_id));
+      }
+    };
+  });
 }
 
 function realAccountModal(){
@@ -772,6 +906,54 @@ function profileStatusCopy(){
   return "";
 }
 
+
+function avatarPublicUrlFromPath(path){
+  if(!path)return "";
+  const {data}=sb.storage.from("avatars").getPublicUrl(path);
+  return data?.publicUrl||"";
+}
+
+async function compressAvatarFile(file){
+  if(!file)return null;
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)) throw new Error("La foto debe ser JPG, PNG o WEBP.");
+  const bitmap=await createImageBitmap(file);
+  const maxSide=800;
+  const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+  const width=Math.max(1,Math.round(bitmap.width*scale));
+  const height=Math.max(1,Math.round(bitmap.height*scale));
+  const canvas=document.createElement("canvas");
+  canvas.width=width; canvas.height=height;
+  canvas.getContext("2d").drawImage(bitmap,0,0,width,height);
+  bitmap.close?.();
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("No se pudo procesar la imagen.")),"image/webp",0.82));
+  if(blob.size>2*1024*1024) throw new Error("La imagen procesada sigue superando los 2 MB. Probá con otra foto.");
+  return blob;
+}
+
+async function uploadMyAvatar(file){
+  const blob=await compressAvatarFile(file);
+  const path=`${realState.user.id}/avatar`;
+  const {error}=await sb.storage.from("avatars").upload(path,blob,{upsert:true,contentType:"image/webp",cacheControl:"3600"});
+  if(error)throw error;
+  const {error:rpcError}=await sb.rpc("set_my_avatar_path");
+  if(rpcError)throw rpcError;
+  return path;
+}
+
+async function removeMyAvatar(){
+  const path=`${realState.user.id}/avatar`;
+  await sb.storage.from("avatars").remove([path]);
+  const {error}=await sb.rpc("clear_my_avatar_path");
+  if(error)throw error;
+}
+
+async function openSignedScript(path){
+  if(!path){ alert("Este perfil todavía no tiene una muestra de guion publicada."); return; }
+  const {data,error}=await sb.storage.from("scripts").createSignedUrl(path,300);
+  if(error){ alert("No se pudo abrir la muestra de guion: "+error.message); return; }
+  window.open(data.signedUrl,"_blank","noopener,noreferrer");
+}
+
 function realProfileFormHtml(){
   const p=realState.profile||{}, priv=realState.privateProfile||{}, roleName=p.roles?.name||"";
   return `<div class="account-tabs">
@@ -782,6 +964,7 @@ function realProfileFormHtml(){
     ${profileStatusCopy()}
     <form id="realProfileForm" class="form-grid" style="margin-top:16px">
       <label>Nombre<input id="realName" maxlength="100" required value="${esc(p.full_name||"")}"></label>
+      <div class="conditional-box avatar-editor-box"><h5>Foto de perfil</h5><div class="avatar-editor-row"><div id="realAvatarPreview" class="profile-avatar avatar-edit-preview">${p.avatar_path?`<img src="${avatarPublicUrlFromPath(p.avatar_path)}" alt="${esc(p.full_name||"Perfil")}">`:initials(p.full_name||"RR")}</div><div><input id="realAvatarFile" type="file" accept="image/jpeg,image/png,image/webp"><p>Se reduce automáticamente para web. Máximo 2 MB después de procesarla.</p>${p.avatar_path?`<button id="removeRealAvatar" type="button" class="outline mini-action">Quitar foto</button>`:""}</div></div></div>
       <label>Rol principal
         <select id="realPrimaryRole" required>
           <option value="">Elegir rol</option>
@@ -822,6 +1005,10 @@ function realProfileModal(){
 function bindRealProfile(){
   const p=realState.profile;
   if(!p)return;
+  const avatarFileInput=document.getElementById("realAvatarFile");
+  if(avatarFileInput){avatarFileInput.onchange=()=>{const file=avatarFileInput.files?.[0];if(!file)return;document.getElementById("realAvatarPreview").innerHTML=`<img src="${URL.createObjectURL(file)}" alt="Vista previa">`;};}
+  const removeAvatarBtn=document.getElementById("removeRealAvatar");
+  if(removeAvatarBtn){removeAvatarBtn.onclick=async()=>{if(!confirm("¿Quitar tu foto de perfil?"))return;try{await removeMyAvatar();await loadRealAccount();realProfileModal()}catch(e){alert(e.message)}};}
   document.getElementById("realLogoutBtn").onclick=realLogout;
   document.getElementById("realPasswordTab").onclick=realPasswordPanel;
 
@@ -845,10 +1032,10 @@ function bindRealProfile(){
   const renderMaterial=()=>{
     const role=realState.roles.find(r=>String(r.id)===String(roleSelect.value))?.name;
     document.getElementById("realMaterialFields").innerHTML=role==="Guion"
-      ? `<div class="conditional-box"><h5>Muestra de guion · PDF</h5><p>Solo para Guion como rol principal. Se guarda un único PDF.</p><input id="realScriptFile" type="file" accept="application/pdf"><small>${p.script_pdf_path?"PDF cargado. Podés reemplazarlo.":"Sin PDF cargado."}</small></div>`
+      ? `<div class="conditional-box"><h5>Muestra de guion · PDF</h5><p>Solo para Guion como rol principal. Se guarda un único PDF.</p><input id="realScriptFile" type="file" accept="application/pdf"><small>${p.script_pdf_path?"PDF cargado. Podés reemplazarlo.":"Sin PDF cargado."}</small>${p.script_pdf_path?`<button id="viewMyScriptPdf" type="button" class="outline mini-action">Ver PDF actual</button>`:""}</div>`
       : `<label>Reel / video único<input id="realReel" value="${esc(p.reel_url||"")}" placeholder="https://youtube.com/..."><span class="char-count">Solo YouTube o Vimeo.</span></label>`;
   };
-  roleSelect.onchange=renderMaterial; drawTags(); renderMaterial();
+  roleSelect.onchange=()=>{renderMaterial();const b=document.getElementById("viewMyScriptPdf");if(b)b.onclick=()=>openSignedScript(p.script_pdf_path)}; drawTags(); renderMaterial(); const currentPdfBtn=document.getElementById("viewMyScriptPdf");if(currentPdfBtn)currentPdfBtn.onclick=()=>openSignedScript(p.script_pdf_path);
 
   document.getElementById("realProfileForm").onsubmit=async e=>{
     e.preventDefault();
@@ -858,6 +1045,9 @@ function bindRealProfile(){
     const reel=role==="Guion"?null:document.getElementById("realReel").value.trim()||null;
     if(reel && !embedUrl(reel)){fb.innerHTML=authNotice("El reel debe ser un enlace válido de YouTube o Vimeo.");return}
 
+    const avatarFile=document.getElementById("realAvatarFile")?.files?.[0];
+    if(avatarFile){try{fb.innerHTML=authNotice("Procesando foto…");await uploadMyAvatar(avatarFile)}catch(e){fb.innerHTML=authNotice(e.message);return}}
+    fb.innerHTML=authNotice("Guardando perfil…");
     const {error:pe}=await sb.from("profiles").update({
       full_name:document.getElementById("realName").value.trim(),
       primary_role_id:Number(roleSelect.value),
@@ -1348,7 +1538,8 @@ async function realAdminPreview(id){
   ]);
   if(p.error){alert(p.error.message);return}
   const x=p.data,embed=embedUrl(x.reel_url);
-  openModal(`<div class="eyebrow">REVISIÓN ADMINISTRATIVA REAL</div><div class="profile-top"><div class="profile-avatar">${initials(x.full_name||"RR")}</div><div><div class="profile-role">${esc(x.roles?.name||"Sin rol")}</div><div class="profile-name">${esc(x.full_name||"(Sin nombre)")}</div><div class="secondary">${(tags.data||[]).map(t=>esc(t.tag)).join(" · ")}</div></div><div class="profile-score"><strong>${String(x.status).toUpperCase()}</strong>${x.is_visible?"VISIBLE":"OCULTO"}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(x.bio||"Sin descripción")}</p></div>${x.roles?.name==="Guion"?`<div class="profile-section"><h4>Muestra de guion</h4><p>${x.script_pdf_path?"PDF cargado en Storage privado.":"Sin PDF cargado."}</p></div>`:`<div class="profile-section"><h4>Reel</h4>${embed?`<div class="video-card"><iframe src="${embed}" allowfullscreen></iframe></div>`:"<p>Sin reel válido.</p>"}</div>`}<div class="profile-section"><h4>Contacto privado</h4><p>${esc(priv.data?.contact_type||"—")}: <strong>${esc(priv.data?.contact_value||"—")}</strong></p></div>${mod.data?.rejection_reason?authNotice(`Motivo anterior: ${mod.data.rejection_reason}`):""}<div class="profile-actions"><button id="backRealAdmin" class="outline">Volver</button></div>`,true);
+  openModal(`<div class="eyebrow">REVISIÓN ADMINISTRATIVA REAL</div><div class="profile-top"><div class="profile-avatar">${x.avatar_path?`<img src="${avatarPublicUrlFromPath(x.avatar_path)}" alt="${esc(x.full_name||"Perfil")}">`:initials(x.full_name||"RR")}</div><div><div class="profile-role">${esc(x.roles?.name||"Sin rol")}</div><div class="profile-name">${esc(x.full_name||"(Sin nombre)")}</div><div class="secondary">${(tags.data||[]).map(t=>esc(t.tag)).join(" · ")}</div></div><div class="profile-score"><strong>${String(x.status).toUpperCase()}</strong>${x.is_visible?"VISIBLE":"OCULTO"}</div></div><div class="profile-section"><h4>Descripción</h4><p>${esc(x.bio||"Sin descripción")}</p></div>${x.roles?.name==="Guion"?`<div class="profile-section"><h4>Muestra de guion</h4>${x.script_pdf_path?`<div class="pdf-card"><div><strong>PDF cargado</strong><small>Muestra de guion del perfil</small></div><button id="adminOpenScriptPdf">Ver PDF</button></div>`:"<p>Sin PDF cargado.</p>"}</div>`:`<div class="profile-section"><h4>Reel</h4>${embed?`<div class="video-card"><iframe src="${embed}" allowfullscreen></iframe></div>`:"<p>Sin reel válido.</p>"}</div>`}<div class="profile-section"><h4>Contacto privado</h4><p>${esc(priv.data?.contact_type||"—")}: <strong>${esc(priv.data?.contact_value||"—")}</strong></p></div>${mod.data?.rejection_reason?authNotice(`Motivo anterior: ${mod.data.rejection_reason}`):""}<div class="profile-actions"><button id="backRealAdmin" class="outline">Volver</button></div>`,true);
+  const adminPdfBtn=document.getElementById("adminOpenScriptPdf");if(adminPdfBtn)adminPdfBtn.onclick=()=>openSignedScript(x.script_pdf_path);
   document.getElementById("backRealAdmin").onclick=closeModal;
 }
 
@@ -1357,6 +1548,21 @@ async function bootstrapReal(){
   await loadRealAccount();
   await loadPublicProfilesIntoExistingUI();
   sb.auth.onAuthStateChange(async()=>{await loadRealAccount();await loadPublicProfilesIntoExistingUI();if(state.route==="realizadores")renderDirectory()});
+
+  if(realState.user){
+    sb.channel("my-notifications")
+      .on("postgres_changes",{
+        event:"INSERT",
+        schema:"public",
+        table:"notifications",
+        filter:`user_id=eq.${realState.user.id}`
+      },async()=>{
+        await loadNotifications();
+        updateRealAccountButton();
+      })
+      .subscribe();
+  }
+
   route();
 }
 
