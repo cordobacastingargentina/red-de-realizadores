@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Rodaje audiovisual">
+<defs>
+  <linearGradient id="bg" x1="0" x2="1">
+    <stop offset="0" stop-color="#102a34"/>
+    <stop offset="1" stop-color="#173d49"/>
+  </linearGradient>
+  <linearGradient id="fade" x1="0" x2="1">
+    <stop offset="0" stop-color="#102a34" stop-opacity="1"/>
+    <stop offset=".34" stop-color="#102a34" stop-opacity=".15"/>
+    <stop offset="1" stop-color="#102a34" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<rect width="960" height="600" fill="url(#bg)"/>
+<circle cx="742" cy="148" r="98" fill="#d2b75d" opacity=".12"/>
+<path d="M590 70h250l-55 150H535z" fill="#f0e5bd" opacity=".12"/>
+<path d="M790 0l-92 232" stroke="#d7c680" stroke-width="5" opacity=".22"/>
+<path d="M840 0l-103 239" stroke="#d7c680" stroke-width="2" opacity=".13"/>
+<!-- camera -->
+<rect x="555" y="302" width="168" height="98" rx="10" fill="#07171d" opacity=".92"/>
+<rect x="702" y="326" width="84" height="52" rx="8" fill="#07171d" opacity=".92"/>
+<circle cx="780" cy="352" r="35" fill="#091b22"/>
+<circle cx="780" cy="352" r="21" fill="#254e5a"/>
+<circle cx="780" cy="352" r="10" fill="#d5b75c" opacity=".55"/>
+<rect x="584" y="272" width="86" height="35" rx="7" fill="#07171d"/>
+<path d="M617 400l-48 145M670 400l42 145M645 400v145" stroke="#07171d" stroke-width="12" stroke-linecap="round"/>
+<!-- crew silhouettes -->
+<circle cx="466" cy="338" r="34" fill="#07171d"/>
+<path d="M430 520l18-147h42l29 147z" fill="#07171d"/>
+<path d="M454 402l-79 57M483 400l64 43" stroke="#07171d" stroke-width="18" stroke-linecap="round"/>
+<circle cx="875" cy="360" r="28" fill="#07171d" opacity=".9"/>
+<path d="M843 520l17-128h35l25 128z" fill="#07171d" opacity=".9"/>
+<!-- floor / cables -->
+<path d="M400 536c95-42 167 40 271 2 74-27 137-19 225 17" fill="none" stroke="#d5b75c" stroke-width="3" opacity=".28"/>
+<rect width="520" height="600" fill="url(#fade)"/>
+</svg>

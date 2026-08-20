@@ -121,3 +121,15 @@ Corrección de integración:
 - Opción “Marcar todas como leídas”.
 - Se limita deliberadamente a eventos importantes; recomendaciones y contacto no generan notificaciones.
 - Requiere ejecutar `06_notifications.sql`.
+
+## V0.9.2 — Córdoba + identidad audiovisual
+- Córdoba pasa a ser explícita desde el primer bloque: `RED DE REALIZADORES · CÓRDOBA`.
+- Nuevo concepto de portada: `El audiovisual cordobés, conectado.`
+- Hero con ilustración SVG audiovisual liviana, local al repositorio y sin dependencia de video/stock externo.
+- Botón `Explorar realizadores` baja al buscador.
+- Botón `Formate como profesional` abre Formación.
+- Directorio reforzado como `Profesionales audiovisuales de Córdoba`.
+- Footer: `Para fortalecer la comunidad audiovisual de la provincia`.
+- Se agrega la notificación pendiente por nueva recomendación.
+- Click en una notificación de recomendación abre el perfil correspondiente.
+- Requiere ejecutar `08_recommendation_notifications.sql`.
