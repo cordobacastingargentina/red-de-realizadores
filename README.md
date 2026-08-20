@@ -133,3 +133,14 @@ Corrección de integración:
 - Se agrega la notificación pendiente por nueva recomendación.
 - Click en una notificación de recomendación abre el perfil correspondiente.
 - Requiere ejecutar `08_recommendation_notifications.sql`.
+
+## V0.9.3 — Hero audiovisual corregido
+- Se mantiene la identidad `Red de Realizadores · Córdoba`.
+- Se recuperan proporciones, tipografía y aire del hero anterior.
+- Se elimina la placa flotante redundante de logos que sobrecargaba la composición.
+- Se incorpora una imagen realista de rodaje local al repositorio en `assets/hero-filmset-cordoba.png`.
+- La imagen se integra mediante degradados, sin video de fondo.
+- Vuelve el bloque pequeño `UNA INICIATIVA DE` + logo blanco de Córdoba Casting debajo del copy.
+- El footer también vuelve al formato corto `UNA INICIATIVA DE`.
+- Se mantienen `Explorar realizadores` y `Formate como profesional`.
+- No hay cambios en Supabase ni hace falta ejecutar SQL nuevo.
