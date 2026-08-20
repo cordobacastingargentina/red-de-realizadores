@@ -144,3 +144,13 @@ Corrección de integración:
 - El footer también vuelve al formato corto `UNA INICIATIVA DE`.
 - Se mantienen `Explorar realizadores` y `Formate como profesional`.
 - No hay cambios en Supabase ni hace falta ejecutar SQL nuevo.
+
+## V0.9.4 — Hero compacto
+- Se usa la fotografía ORIGINAL provista por el usuario: `assets/hero-filmset-cordoba.jpg`.
+- Se elimina la imagen/mockup generado previamente.
+- El hero baja de altura para llegar mucho antes al buscador y al directorio.
+- Se eliminan `Explorar realizadores` y `Formate como profesional` del hero.
+- `Una iniciativa de Córdoba Casting` pasa a mostrarse de forma mínima junto al logo de Red de Realizadores en desktop.
+- En pantallas más angostas esa firma desaparece para no saturar la navegación.
+- El footer conserva la firma simple original.
+- No hay cambios de Supabase ni SQL.
