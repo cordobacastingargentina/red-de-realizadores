@@ -1,6 +1,16 @@
 const roles=["Dirección","Guion","Dirección de Fotografía","Cámara","Dirección de Arte","Producción","Sonido","Montaje / Edición","Color","VFX / Motion Graphics","Música"];
 const cameraIcon=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10l5-3v10l-5-3z"/><path d="M7 7l1.5-2h4L14 7"/></svg>`;
 const appState={route:"realizadores"};
+const initialAuthHash=window.location.hash||"";
+let passwordRecoveryIntent=(()=>{
+  try{
+    const raw=initialAuthHash.startsWith("#")?initialAuthHash.slice(1):initialAuthHash;
+    const params=new URLSearchParams(raw);
+    return params.get("type")==="recovery" || initialAuthHash==="#recuperar-clave";
+  }catch(e){
+    return initialAuthHash.includes("type=recovery") || initialAuthHash==="#recuperar-clave";
+  }
+})();
 let profiles=[];
 const app=document.getElementById("app"),modal=document.getElementById("modal"),backdrop=document.getElementById("modalBackdrop"),modalContent=document.getElementById("modalContent"),accountBtn=document.getElementById("openAccountBtn");
 const adminNavLink=document.getElementById("adminNavLink");
@@ -32,7 +42,12 @@ async function route(){
   if(raw==="recuperar-clave"){
     appState.route="realizadores";
     renderDirectory();
-    if(realState.user)showRecoveryPasswordModal();
+    if(realState.user){
+      passwordRecoveryIntent=true;
+      showRecoveryPasswordModal();
+    }else{
+      openModal(`<div class="eyebrow">RECUPERAR ACCESO</div><h2>Validando enlace…</h2><p>Estamos verificando tu solicitud de recuperación. Si el enlace es válido, vas a poder elegir una contraseña nueva en unos segundos.</p>`);
+    }
     return;
   }
   appState.route=raw;
@@ -940,7 +955,7 @@ function requestPasswordResetModal(){
   document.getElementById("resetRequestForm").onsubmit=async e=>{
     e.preventDefault();const fb=document.getElementById("resetFeedback");fb.innerHTML=authNotice("Enviando…");
     const email=document.getElementById("resetEmail").value.trim();
-    const redirectTo=`${window.location.origin}${window.location.pathname}#recuperar-clave`;
+    const redirectTo=`${window.location.origin}${window.location.pathname}`;
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
     fb.innerHTML=error?authNotice(error.message):authNotice("Te enviamos el enlace. Revisá tu correo y también la carpeta de spam.");
   };
@@ -954,8 +969,9 @@ function showRecoveryPasswordModal(){
     fb.innerHTML=authNotice("Guardando…");
     const {error}=await sb.auth.updateUser({password:a});
     if(error){fb.innerHTML=authNotice(error.message);return}
+    passwordRecoveryIntent=false;
     history.replaceState(null,"",`${window.location.pathname}#realizadores`);
-    fb.innerHTML=authNotice("Contraseña actualizada. Ya podés seguir usando tu cuenta.");
+    fb.innerHTML=authNotice("Contraseña actualizada correctamente. Ya podés seguir usando tu cuenta.");
     setTimeout(()=>{closeModal();realAccountModal()},900);
   };
 }
@@ -1640,14 +1656,41 @@ async function realAdminPreview(id){
 }
 
 async function bootstrapReal(){
+  let recoveryModalShown=false;
+
+  const maybeOpenRecovery=()=>{
+    if(passwordRecoveryIntent && realState.user && !recoveryModalShown){
+      recoveryModalShown=true;
+      history.replaceState(null,"",`${window.location.pathname}#recuperar-clave`);
+      showRecoveryPasswordModal();
+      return true;
+    }
+    return false;
+  };
+
+  // Registrar primero: PASSWORD_RECOVERY puede dispararse mientras Supabase
+  // procesa el access_token que viene en el hash del enlace del email.
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==="PASSWORD_RECOVERY"){
+      passwordRecoveryIntent=true;
+    }
+
+    await loadRealAccount();
+    await loadPublicProfilesIntoExistingUI();
+
+    if(maybeOpenRecovery())return;
+    if(appState.route==="realizadores")renderDirectory();
+  });
+
   await loadRealRoles();
   await loadRealAccount();
   await loadPublicProfilesIntoExistingUI();
-  sb.auth.onAuthStateChange(async(event)=>{
-    await loadRealAccount();await loadPublicProfilesIntoExistingUI();
-    if(event==="PASSWORD_RECOVERY"){history.replaceState(null,"",`${window.location.pathname}#recuperar-clave`);showRecoveryPasswordModal();return}
-    if(appState.route==="realizadores")renderDirectory();
-  });
+
+  // Fallback importante: si PASSWORD_RECOVERY ocurrió antes de que el listener
+  // quedara activo, initialAuthHash conserva que el enlace era de recovery.
+  if(maybeOpenRecovery()){
+    return;
+  }
 
   if(realState.user){
     sb.channel("my-notifications")
@@ -1664,6 +1707,14 @@ async function bootstrapReal(){
   }
 
   route();
-}
 
+  // Segundo fallback para navegadores donde el hash se procesa un instante
+  // después de la carga inicial.
+  setTimeout(async()=>{
+    if(passwordRecoveryIntent && !recoveryModalShown){
+      await loadRealAccount();
+      maybeOpenRecovery();
+    }
+  },250);
+}
 bootstrapReal();

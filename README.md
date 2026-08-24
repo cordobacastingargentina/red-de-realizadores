@@ -41,3 +41,11 @@ El formulario de contacto conserva el flujo visual, pero el envío externo por e
 - `app.js` — lógica de frontend y Supabase.
 - `supabase-config.js` — Project URL + publishable key pública.
 - `assets/` — identidad e imágenes.
+
+## V1.0.1 — Password recovery hotfix
+- Corrige el caso donde Supabase redirigía correctamente a la web pero el formulario de nueva contraseña no aparecía.
+- Se detecta `type=recovery` desde el hash original antes de que Supabase lo consuma.
+- El listener de Auth se registra antes de `getSession()`.
+- Hay fallback después de restaurar la sesión y un segundo chequeo diferido.
+- `resetPasswordForEmail` redirige a la raíz pública del proyecto; Supabase agrega su token de recuperación.
+- No requiere SQL nuevo.
