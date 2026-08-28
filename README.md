@@ -49,3 +49,50 @@ El formulario de contacto conserva el flujo visual, pero el envío externo por e
 - Hay fallback después de restaurar la sesión y un segundo chequeo diferido.
 - `resetPasswordForEmail` redirige a la raíz pública del proyecto; Supabase agrega su token de recuperación.
 - No requiere SQL nuevo.
+
+## V1.0.2 — Recovery query fix
+- La recuperación ya no depende del hash de Supabase.
+- `resetPasswordForEmail` usa `?recovery=1` como marcador persistente.
+- Supabase puede consumir sus tokens del hash sin borrar la intención de recuperación.
+- La web abre el formulario de nueva contraseña cuando detecta `?recovery=1` y existe sesión de recovery.
+- No requiere SQL nuevo.
+
+## V1.0.3 — Recuperación revisada a fondo
+- Se elimina la dependencia principal de `PASSWORD_RECOVERY`.
+- Si la URL contiene `?recovery=1`, la app espera explícitamente hasta 8 segundos a que Supabase restaure la sesión.
+- `onAuthStateChange` ya no ejecuta `await` a métodos de Supabase dentro del callback; todo se difiere con `setTimeout(..., 0)`.
+- `detectSessionInUrl`, `persistSession` y `autoRefreshToken` quedan explícitos en la configuración del cliente.
+- Si el enlace venció o no produce sesión, aparece un error claro en lugar de volver silenciosamente a Home.
+- No requiere SQL nuevo.
+
+
+## V1.1.0 — Recursos administrables
+
+Se agregó una biblioteca real de Recursos conectada a Supabase.
+
+### Antes de subir la web
+1. Abrí Supabase → SQL Editor.
+2. Ejecutá `09_resources.sql` completo, una sola vez.
+3. Después subí los archivos de esta versión a GitHub Pages.
+
+### Qué puede hacer Administración → Recursos
+- Crear Descargables o Guías / Tutoriales.
+- Editar, publicar/ocultar y eliminar.
+- Marcar recursos destacados.
+- Definir categoría y orden manual.
+- Descargables: link PDF, link editable o ambos.
+- Tutoriales: texto largo con formato simple seguro.
+
+### Seguridad
+La UI no es la única protección. RLS impide INSERT / UPDATE / DELETE a cualquier usuario que no tenga `role='admin'` en `user_roles`. La lectura pública devuelve solo `is_visible=true`; administración puede ver también ocultos.
+
+### Formato de tutoriales
+En el editor:
+- `## Título de sección`
+- `### Subtítulo`
+- `- elemento de lista`
+- `> cita o nota`
+- `**texto en negrita**`
+- URLs que empiezan por `http://` o `https://` se vuelven enlaces.
+
+No se guarda HTML arbitrario: el texto se escapa antes de renderizar para evitar inyección de código.

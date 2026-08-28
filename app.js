@@ -4,14 +4,20 @@ const appState={route:"realizadores"};
 const initialAuthHash=window.location.hash||"";
 let passwordRecoveryIntent=(()=>{
   try{
+    const query=new URLSearchParams(window.location.search);
+    if(query.get("recovery")==="1")return true;
+
     const raw=initialAuthHash.startsWith("#")?initialAuthHash.slice(1):initialAuthHash;
     const params=new URLSearchParams(raw);
     return params.get("type")==="recovery" || initialAuthHash==="#recuperar-clave";
   }catch(e){
-    return initialAuthHash.includes("type=recovery") || initialAuthHash==="#recuperar-clave";
+    return window.location.search.includes("recovery=1")
+      || initialAuthHash.includes("type=recovery")
+      || initialAuthHash==="#recuperar-clave";
   }
 })();
 let profiles=[];
+let resourcesCache=[];
 const app=document.getElementById("app"),modal=document.getElementById("modal"),backdrop=document.getElementById("modalBackdrop"),modalContent=document.getElementById("modalContent"),accountBtn=document.getElementById("openAccountBtn");
 const adminNavLink=document.getElementById("adminNavLink");
 const notificationsBtn=document.getElementById("notificationsBtn");
@@ -39,21 +45,24 @@ async function route(){
     await renderProfilePage(id);
     return;
   }
-  if(raw==="recuperar-clave"){
+  if(raw.startsWith("recurso/")){
+    appState.route="recursos";
+    const id=Number(decodeURIComponent(raw.slice("recurso/".length)));
+    await renderResourceDetail(id);
+    return;
+  }
+  if(raw==="recuperar-clave" || passwordRecoveryIntent){
     appState.route="realizadores";
     renderDirectory();
-    if(realState.user){
-      passwordRecoveryIntent=true;
-      showRecoveryPasswordModal();
-    }else{
-      openModal(`<div class="eyebrow">RECUPERAR ACCESO</div><h2>Validando enlace…</h2><p>Estamos verificando tu solicitud de recuperación. Si el enlace es válido, vas a poder elegir una contraseña nueva en unos segundos.</p>`);
+    if(passwordRecoveryIntent){
+      enterRecoveryMode();
     }
     return;
   }
   appState.route=raw;
   document.title="Red de Realizadores — Córdoba Casting";
   const renderer={realizadores:renderDirectory,busquedas:renderJobs,recursos:renderResources,formacion:renderTraining,administracion:renderAdministration}[raw]||renderDirectory;
-  renderer();
+  await renderer();
 }
 function matchRank(p,q,roleFilter){let rank=0;const qq=q.trim().toLowerCase();if(roleFilter){if(p.primary===roleFilter)rank+=120;else if(p.tags.some(t=>t.toLowerCase()===roleFilter.toLowerCase()))rank+=55;else return -1}if(!qq)return rank;const primary=p.primary.toLowerCase(),tags=p.tags.map(t=>t.toLowerCase()),name=p.name.toLowerCase(),bio=p.bio.toLowerCase();if(primary===qq)rank+=200;else if(primary.includes(qq))rank+=150;if(tags.some(t=>t===qq))rank+=100;else if(tags.some(t=>t.includes(qq)))rank+=75;if(name.includes(qq))rank+=60;if(bio.includes(qq))rank+=20;return rank||-1}
 function renderDirectory(){app.innerHTML=`<section class="hero hero-cordoba hero-compact wrap">
@@ -644,7 +653,142 @@ function newRealJobModal(){
   };
 }
 
-function renderResources(){app.innerHTML=`<section class="simple-page narrow"><div class="eyebrow">RECURSOS / RR</div><h1 class="page-title">Material útil<br>para realizar.</h1><p class="lead">Una biblioteca práctica para preproducción, rodaje y trabajo colaborativo.</p><div class="resource-grid"><article><span>01</span><h3>Checklist de rodaje</h3><p>Equipo, permisos, continuidad y necesidades antes de filmar.</p><button class="text-btn">Ver recurso →</button></article><article><span>02</span><h3>Plan de rodaje</h3><p>Modelo base para organizar jornadas, escenas y necesidades técnicas.</p><button class="text-btn">Ver recurso →</button></article><article><span>03</span><h3>Guía de casting</h3><p>Cómo armar una convocatoria clara y profesional.</p><button class="text-btn">Ver recurso →</button></article><article><span>04</span><h3>Breakdown de guion</h3><p>Plantilla inicial para desglosar necesidades por escena.</p><button class="text-btn">Ver recurso →</button></article></div></section>`}
+function resourceTypeLabel(type){return type==="article"?"GUÍA / TUTORIAL":"DESCARGABLE"}
+function resourceDateLabel(value){
+  if(!value)return "";
+  try{return new Intl.DateTimeFormat("es-AR",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(value)).replace(".","")}catch(e){return ""}
+}
+function resourceInline(text){
+  let s=esc(text||"");
+  s=s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+  s=s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  return s;
+}
+function renderResourceBody(content){
+  const lines=String(content||"").replace(/\r/g,"").split("\n");
+  let html="",list=[];
+  const flush=()=>{if(list.length){html+=`<ul>${list.map(x=>`<li>${resourceInline(x)}</li>`).join("")}</ul>`;list=[]}};
+  for(const raw of lines){
+    const line=raw.trim();
+    if(!line){flush();continue}
+    if(line.startsWith("- ")){list.push(line.slice(2));continue}
+    flush();
+    if(line.startsWith("### "))html+=`<h3>${resourceInline(line.slice(4))}</h3>`;
+    else if(line.startsWith("## "))html+=`<h2>${resourceInline(line.slice(3))}</h2>`;
+    else if(line.startsWith("> "))html+=`<blockquote>${resourceInline(line.slice(2))}</blockquote>`;
+    else html+=`<p>${resourceInline(line)}</p>`;
+  }
+  flush();
+  return html;
+}
+function resourceCardHtml(r){
+  const cover=r.cover_url?`<div class="resource-cover"><img src="${esc(r.cover_url)}" alt=""></div>`:`<div class="resource-cover resource-cover-fallback"><span>${r.resource_type==="article"?"LEER":"DESCARGAR"}</span></div>`;
+  const actions=r.resource_type==="article"
+    ? `<a class="resource-read" href="#recurso/${r.id}">Leer guía <span>→</span></a>`
+    : `<div class="resource-download-actions">
+        ${r.pdf_url?`<a href="${esc(r.pdf_url)}" target="_blank" rel="noopener noreferrer">PDF <span>↓</span></a>`:""}
+        ${r.editable_url?`<a href="${esc(r.editable_url)}" target="_blank" rel="noopener noreferrer">Editable <span>↓</span></a>`:""}
+      </div>`;
+  return `<article class="resource-card" data-resource-type="${esc(r.resource_type)}" data-resource-category="${esc(r.category||"Otros")}">
+    ${cover}
+    <div class="resource-card-body">
+      <div class="resource-meta"><span>${resourceTypeLabel(r.resource_type)}</span><span>${esc(r.category||"Otros")}</span></div>
+      <h3>${esc(r.title)}</h3>
+      <p>${esc(r.excerpt||"")}</p>
+      <div class="resource-card-bottom">${actions}${r.is_featured?'<span class="resource-featured">DESTACADO</span>':""}</div>
+    </div>
+  </article>`;
+}
+async function loadPublicResources(){
+  const {data,error}=await sb.from("resources")
+    .select("id,resource_type,title,excerpt,category,cover_url,content,pdf_url,editable_url,is_featured,sort_order,created_at,updated_at")
+    .eq("is_visible",true)
+    .order("is_featured",{ascending:false})
+    .order("sort_order",{ascending:true})
+    .order("created_at",{ascending:false});
+  if(error)throw error;
+  resourcesCache=data||[];
+  return resourcesCache;
+}
+async function renderResources(){
+  app.innerHTML=`<section class="resources-hero wrap">
+    <div class="eyebrow">RECURSOS / RED DE REALIZADORES</div>
+    <h1 class="page-title">Herramientas para<br><span>hacer mejor audiovisual.</span></h1>
+    <p class="lead">Plantillas descargables, documentos editables y pequeñas guías para preproducción, rodaje y postproducción.</p>
+  </section>
+  <section class="resources-library wrap">
+    <div class="resources-toolbar">
+      <div class="resource-filter-group">
+        <button class="active" data-resource-filter="all">Todos</button>
+        <button data-resource-filter="download">Descargables</button>
+        <button data-resource-filter="article">Guías / tutoriales</button>
+      </div>
+      <select id="resourceCategoryFilter"><option value="">Todas las categorías</option></select>
+    </div>
+    <div id="resourcePublicContent" class="resource-public-content">${authNotice("Cargando recursos…")}</div>
+  </section>`;
+
+  const target=document.getElementById("resourcePublicContent");
+  try{
+    const rows=await loadPublicResources();
+    if(!rows.length){target.innerHTML=`<div class="resources-empty"><span>RR / BIBLIOTECA</span><h2>Estamos preparando los primeros recursos.</h2><p>Pronto vas a encontrar plantillas, documentos y pequeñas guías para trabajar mejor.</p></div>`;return}
+    const categories=[...new Set(rows.map(r=>r.category||"Otros"))].sort((a,b)=>a.localeCompare(b,"es"));
+    const select=document.getElementById("resourceCategoryFilter");
+    select.innerHTML=`<option value="">Todas las categorías</option>${categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("")}`;
+    let type="all";
+    const draw=()=>{
+      const cat=select.value;
+      const filtered=rows.filter(r=>(type==="all"||r.resource_type===type)&&(!cat||(r.category||"Otros")===cat));
+      target.innerHTML=`<div class="resource-results-head"><strong>${filtered.length}</strong> recurso${filtered.length===1?"":"s"}</div><div class="resource-grid-new">${filtered.map(resourceCardHtml).join("")||'<div class="resources-empty compact"><h2>No hay recursos con estos filtros.</h2></div>'}</div>`;
+    };
+    document.querySelectorAll("[data-resource-filter]").forEach(b=>b.onclick=()=>{
+      type=b.dataset.resourceFilter;
+      document.querySelectorAll("[data-resource-filter]").forEach(x=>x.classList.toggle("active",x===b));
+      draw();
+    });
+    select.onchange=draw;
+    draw();
+  }catch(e){
+    console.error("Resources:",e);
+    target.innerHTML=`<div class="resources-empty"><span>RECURSOS</span><h2>No pudimos cargar la biblioteca.</h2><p>Si sos administrador y acabás de actualizar la web, verificá que hayas ejecutado <strong>09_resources.sql</strong> en Supabase.</p></div>`;
+  }
+}
+async function renderResourceDetail(id){
+  if(!Number.isFinite(id))return renderResources();
+  app.innerHTML=`<section class="wrap resource-detail-shell">${authNotice("Cargando recurso…")}</section>`;
+  const {data:r,error}=await sb.from("resources")
+    .select("id,resource_type,title,excerpt,category,cover_url,content,pdf_url,editable_url,is_featured,created_at,updated_at")
+    .eq("id",id).single();
+  if(error||!r){
+    app.innerHTML=`<section class="wrap resource-detail-shell"><a class="resource-back" href="#recursos">← Volver a Recursos</a><div class="resources-empty"><h2>Este recurso no está disponible.</h2></div></section>`;
+    return;
+  }
+  document.title=`${r.title} | Recursos · Red de Realizadores`;
+  if(r.resource_type!=="article"){
+    app.innerHTML=`<section class="wrap resource-detail-shell">
+      <a class="resource-back" href="#recursos">← Volver a Recursos</a>
+      <div class="resource-download-detail">
+        ${r.cover_url?`<img src="${esc(r.cover_url)}" alt="">`:""}
+        <div><div class="resource-meta"><span>DESCARGABLE</span><span>${esc(r.category||"Otros")}</span></div><h1>${esc(r.title)}</h1><p>${esc(r.excerpt||"")}</p>
+        <div class="resource-download-actions large">${r.pdf_url?`<a href="${esc(r.pdf_url)}" target="_blank" rel="noopener noreferrer">Descargar PDF <span>↓</span></a>`:""}${r.editable_url?`<a href="${esc(r.editable_url)}" target="_blank" rel="noopener noreferrer">Descargar editable <span>↓</span></a>`:""}</div></div>
+      </div></section>`;
+    return;
+  }
+  app.innerHTML=`<section class="wrap resource-detail-shell">
+    <a class="resource-back" href="#recursos">← Volver a Recursos</a>
+    <article class="resource-article">
+      <header>
+        <div class="resource-meta"><span>GUÍA / TUTORIAL</span><span>${esc(r.category||"Otros")}</span><span>${resourceDateLabel(r.created_at)}</span></div>
+        <h1>${esc(r.title)}</h1>
+        <p class="resource-article-deck">${esc(r.excerpt||"")}</p>
+        ${r.cover_url?`<img class="resource-article-cover" src="${esc(r.cover_url)}" alt="">`:""}
+      </header>
+      <div class="resource-article-body">${renderResourceBody(r.content)}</div>
+      <footer><span>RED DE REALIZADORES · CÓRDOBA</span><strong>Un recurso de Córdoba Casting</strong></footer>
+    </article>
+  </section>`;
+}
+
 function renderTraining(){app.innerHTML=`<section class="training"><div class="training-shell"><div class="training-brand"><div><img src="assets/cordoba-casting-white.png" alt="Córdoba Casting"><h1 class="page-title">Formación<br>audiovisual.</h1><p>Cursos, talleres y experiencias para seguir formando profesionales frente y detrás de cámara.</p></div><small>FORMACIÓN AUDIOVISUAL · CÓRDOBA</small></div><div class="training-content"><div class="eyebrow">FORMACIÓN · CÓRDOBA CASTING</div><h2>Nuestras Propuestas</h2><p>Formación para seguir desarrollando herramientas, ampliar tu práctica y crecer dentro de la industria audiovisual.</p><div class="course-list"><article class="course"><div><span class="course-tag">CURSO</span><h3>Dirección actoral para cámara</h3><p>Herramientas prácticas para dirigir intérpretes y escenas audiovisuales.</p></div><button class="outline">Más información</button></article><article class="course"><div><span class="course-tag">TALLER</span><h3>Taller de escenas</h3><p>Ensayo, práctica frente a cámara y filmación de material.</p></div><button class="outline">Más información</button></article></div></div></div></section>`}
 async function loadPublicProfilesIntoExistingUI(){
   const {data,error}=await sb
@@ -955,7 +1099,7 @@ function requestPasswordResetModal(){
   document.getElementById("resetRequestForm").onsubmit=async e=>{
     e.preventDefault();const fb=document.getElementById("resetFeedback");fb.innerHTML=authNotice("Enviando…");
     const email=document.getElementById("resetEmail").value.trim();
-    const redirectTo=`${window.location.origin}${window.location.pathname}`;
+    const redirectTo=`${window.location.origin}${window.location.pathname}?recovery=1`;
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
     fb.innerHTML=error?authNotice(error.message):authNotice("Te enviamos el enlace. Revisá tu correo y también la carpeta de spam.");
   };
@@ -972,7 +1116,11 @@ function showRecoveryPasswordModal(){
     passwordRecoveryIntent=false;
     history.replaceState(null,"",`${window.location.pathname}#realizadores`);
     fb.innerHTML=authNotice("Contraseña actualizada correctamente. Ya podés seguir usando tu cuenta.");
-    setTimeout(()=>{closeModal();realAccountModal()},900);
+    setTimeout(async()=>{
+      await loadRealAccount();
+      closeModal();
+      realAccountModal();
+    },900);
   };
 }
 
@@ -1275,7 +1423,7 @@ async function renderAdministration(){
       <div>
         <div class="eyebrow">CÓRDOBA CASTING / ADMINISTRACIÓN</div>
         <h1 class="page-title">Panel de administración.</h1>
-        <p>Gestioná perfiles, búsquedas y postulaciones desde un único lugar.</p>
+        <p>Gestioná perfiles, búsquedas, postulaciones y la biblioteca de recursos desde un único lugar.</p>
       </div>
     </div>
 
@@ -1283,6 +1431,7 @@ async function renderAdministration(){
       <button data-admin-section="profiles" class="active">Perfiles</button>
       <button data-admin-section="jobs">Búsquedas</button>
       <button data-admin-section="applications">Postulaciones</button>
+      <button data-admin-section="resources">Recursos</button>
     </div>
 
     <div id="adminPageContent" class="admin-page-content"></div>
@@ -1293,6 +1442,7 @@ async function renderAdministration(){
     if(b.dataset.adminSection==="profiles")renderAdminProfilesSection("pending");
     if(b.dataset.adminSection==="jobs")renderAdminJobsSection();
     if(b.dataset.adminSection==="applications")renderAdminApplicationsSection();
+    if(b.dataset.adminSection==="resources")renderAdminResourcesSection();
   });
 
   await renderAdminProfilesSection("pending");
@@ -1498,6 +1648,115 @@ async function adminEditJobModal(id){
   }catch(e){alert(e.message)}
 }
 
+async function renderAdminResourcesSection(){
+  const content=document.getElementById("adminPageContent");
+  if(!content)return;
+  content.innerHTML=authNotice("Cargando recursos…");
+  const {data,error}=await sb.from("resources").select("*")
+    .order("sort_order",{ascending:true}).order("created_at",{ascending:false});
+  if(error){content.innerHTML=`${authNotice(error.message)}<p class="admin-hint">Si todavía no creaste la tabla, ejecutá <strong>09_resources.sql</strong> en Supabase.</p>`;return}
+  const rows=data||[];
+  content.innerHTML=`<div class="admin-resource-head">
+    <div class="admin-section-intro"><strong>${rows.length}</strong> recursos totales · ${rows.filter(r=>r.is_visible).length} publicados.</div>
+    <button id="adminNewResource" class="gold-btn">+ Nuevo recurso</button>
+  </div>
+  <div class="admin-list">${rows.map(r=>`<div class="admin-row admin-resource-row">
+    <div>
+      <div class="admin-resource-type">${resourceTypeLabel(r.resource_type)} · ${esc(r.category||"Otros")}${r.is_featured?" · ★ DESTACADO":""}</div>
+      <h4>${esc(r.title)}</h4>
+      <div class="secondary">${esc(r.excerpt||"")}</div>
+      <small>${r.is_visible?"PUBLICADO":"OCULTO"} · ORDEN ${Number(r.sort_order)||0} · actualizado ${resourceDateLabel(r.updated_at)}</small>
+    </div>
+    <div class="admin-actions">
+      ${r.resource_type==="article"?`<button data-ar-view="${r.id}">Ver</button>`:""}
+      <button data-ar-edit="${r.id}">Editar</button>
+      <button data-ar-visible="${r.id}" data-value="${r.is_visible?"false":"true"}">${r.is_visible?"Ocultar":"Publicar"}</button>
+      <button class="danger" data-ar-delete="${r.id}">Eliminar</button>
+    </div>
+  </div>`).join("")||'<div class="resources-empty compact"><h2>Todavía no cargaste recursos.</h2><p>Creá el primero desde el botón de arriba.</p></div>'}</div>`;
+  document.getElementById("adminNewResource").onclick=()=>adminResourceModal();
+  document.querySelectorAll("[data-ar-view]").forEach(b=>b.onclick=()=>{location.hash=`#recurso/${b.dataset.arView}`});
+  document.querySelectorAll("[data-ar-edit]").forEach(b=>b.onclick=()=>adminResourceModal(rows.find(r=>Number(r.id)===Number(b.dataset.arEdit))));
+  document.querySelectorAll("[data-ar-visible]").forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.from("resources").update({is_visible:b.dataset.value==="true"}).eq("id",Number(b.dataset.arVisible));
+    if(error)alert(error.message);else renderAdminResourcesSection();
+  });
+  document.querySelectorAll("[data-ar-delete]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("¿Eliminar definitivamente este recurso? Esta acción no se puede deshacer."))return;
+    const {error}=await sb.from("resources").delete().eq("id",Number(b.dataset.arDelete));
+    if(error)alert(error.message);else renderAdminResourcesSection();
+  });
+}
+function adminResourceModal(resource=null){
+  const editing=!!resource;
+  const r=resource||{resource_type:"download",title:"",excerpt:"",category:"Preproducción",cover_url:"",content:"",pdf_url:"",editable_url:"",is_visible:true,is_featured:false,sort_order:0};
+  openModal(`<div class="eyebrow">ADMIN / RECURSOS</div>
+    <h2>${editing?"Editar recurso":"Nuevo recurso"}</h2>
+    <form id="adminResourceForm" class="form-grid resource-admin-form">
+      <label>Tipo de recurso<select id="resourceType"><option value="download" ${r.resource_type==="download"?"selected":""}>Descargable</option><option value="article" ${r.resource_type==="article"?"selected":""}>Guía / tutorial</option></select></label>
+      <label>Título<input id="resourceTitle" maxlength="140" required value="${esc(r.title)}" placeholder="Ej: Planilla de scouting de locación"></label>
+      <label>Descripción breve<textarea id="resourceExcerpt" maxlength="320" required placeholder="Una o dos líneas para explicar qué va a encontrar la persona.">${esc(r.excerpt||"")}</textarea><span class="char-count">Máximo 320 caracteres.</span></label>
+      <div class="resource-admin-two">
+        <label>Categoría<input id="resourceCategory" maxlength="60" required value="${esc(r.category||"Preproducción")}" list="resourceCategoryOptions"></label>
+        <label>Orden<input id="resourceSort" type="number" min="0" max="9999" value="${Number(r.sort_order)||0}"><span class="char-count">0 aparece antes que 10.</span></label>
+      </div>
+      <datalist id="resourceCategoryOptions"><option>Preproducción</option><option>Rodaje</option><option>Dirección</option><option>Guion</option><option>Producción</option><option>Postproducción</option><option>Sonido</option><option>Arte</option><option>Otros</option></datalist>
+      <label>URL de portada <span class="optional-label">opcional</span><input id="resourceCover" type="url" value="${esc(r.cover_url||"")}" placeholder="https://..."><span class="char-count">Puede ser una imagen alojada en tu web, Drive público, etc.</span></label>
+      <div id="resourceDownloadFields" class="resource-admin-conditional">
+        <div class="resource-admin-two">
+          <label>Link PDF <span class="optional-label">opcional</span><input id="resourcePdf" type="url" value="${esc(r.pdf_url||"")}" placeholder="https://..."></label>
+          <label>Link editable <span class="optional-label">opcional</span><input id="resourceEditable" type="url" value="${esc(r.editable_url||"")}" placeholder="https://..."></label>
+        </div>
+        <span class="char-count">En un descargable debe existir al menos uno de los dos links.</span>
+      </div>
+      <div id="resourceArticleFields" class="resource-admin-conditional">
+        <label>Contenido del tutorial<textarea id="resourceContent" class="resource-content-editor" placeholder="Escribí el tutorial acá...">${esc(r.content||"")}</textarea></label>
+        <div class="resource-format-help"><strong>Formato simple:</strong> <code>## Subtítulo</code> · <code>### Subtítulo menor</code> · <code>- item de lista</code> · <code>&gt; cita</code> · <code>**negrita**</code>. Los links https:// se vuelven clickeables.</div>
+      </div>
+      <div class="modal-checks">
+        <label class="check"><input id="resourceVisible" type="checkbox" ${r.is_visible?"checked":""}> Publicado / visible</label>
+        <label class="check"><input id="resourceFeatured" type="checkbox" ${r.is_featured?"checked":""}> Destacado</label>
+      </div>
+      <div id="resourceAdminFeedback"></div>
+      <button class="primary gold" type="submit">${editing?"Guardar cambios":"Crear recurso"}</button>
+    </form>`,true);
+  const type=document.getElementById("resourceType");
+  const download=document.getElementById("resourceDownloadFields");
+  const article=document.getElementById("resourceArticleFields");
+  const sync=()=>{const isArticle=type.value==="article";download.hidden=isArticle;article.hidden=!isArticle};
+  type.onchange=sync;sync();
+  document.getElementById("adminResourceForm").onsubmit=async e=>{
+    e.preventDefault();
+    const fb=document.getElementById("resourceAdminFeedback");
+    const resource_type=type.value;
+    const pdf_url=document.getElementById("resourcePdf").value.trim()||null;
+    const editable_url=document.getElementById("resourceEditable").value.trim()||null;
+    const content=document.getElementById("resourceContent").value.trim()||null;
+    if(resource_type==="download"&&!pdf_url&&!editable_url){fb.innerHTML=authNotice("Agregá al menos un link: PDF o editable.");return}
+    if(resource_type==="article"&&!content){fb.innerHTML=authNotice("Escribí el contenido del tutorial.");return}
+    const payload={
+      resource_type,
+      title:document.getElementById("resourceTitle").value.trim(),
+      excerpt:document.getElementById("resourceExcerpt").value.trim(),
+      category:document.getElementById("resourceCategory").value.trim(),
+      cover_url:document.getElementById("resourceCover").value.trim()||null,
+      content:resource_type==="article"?content:null,
+      pdf_url:resource_type==="download"?pdf_url:null,
+      editable_url:resource_type==="download"?editable_url:null,
+      is_visible:document.getElementById("resourceVisible").checked,
+      is_featured:document.getElementById("resourceFeatured").checked,
+      sort_order:Math.max(0,Number(document.getElementById("resourceSort").value)||0)
+    };
+    fb.innerHTML=authNotice("Guardando…");
+    let result;
+    if(editing)result=await sb.from("resources").update(payload).eq("id",r.id);
+    else result=await sb.from("resources").insert({...payload,created_by:realState.user.id});
+    if(result.error){fb.innerHTML=authNotice(result.error.message);return}
+    closeModal();
+    renderAdminResourcesSection();
+  };
+}
+
 async function renderAdminApplicationsSection(){
   const content=document.getElementById("adminPageContent");
   if(!content)return;
@@ -1655,42 +1914,106 @@ async function realAdminPreview(id){
   document.getElementById("backRealAdmin").onclick=closeModal;
 }
 
-async function bootstrapReal(){
-  let recoveryModalShown=false;
 
-  const maybeOpenRecovery=()=>{
-    if(passwordRecoveryIntent && realState.user && !recoveryModalShown){
-      recoveryModalShown=true;
-      history.replaceState(null,"",`${window.location.pathname}#recuperar-clave`);
-      showRecoveryPasswordModal();
-      return true;
+function sleep(ms){
+  return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+async function waitForRecoverySession(timeoutMs=8000){
+  const started=Date.now();
+
+  while(Date.now()-started < timeoutMs){
+    const {data,error}=await sb.auth.getSession();
+
+    if(error){
+      console.error("Recovery getSession:",error);
     }
-    return false;
-  };
 
-  // Registrar primero: PASSWORD_RECOVERY puede dispararse mientras Supabase
-  // procesa el access_token que viene en el hash del enlace del email.
-  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(data?.session?.user){
+      return data.session;
+    }
+
+    await sleep(200);
+  }
+
+  return null;
+}
+
+async function enterRecoveryMode(){
+  passwordRecoveryIntent=true;
+
+  // No dependemos de PASSWORD_RECOVERY: esperamos de forma explícita
+  // a que supabase-js procese el token/hash del enlace.
+  const session=await waitForRecoverySession();
+
+  if(!session){
+    openModal(`
+      <div class="eyebrow">RECUPERAR ACCESO</div>
+      <h2>No pudimos validar el enlace</h2>
+      <p>El enlace puede haber vencido o ya haber sido utilizado.</p>
+      <p>Volvé a solicitar un correo de recuperación desde “¿Olvidaste tu contraseña?”.</p>
+      <button id="retryRecoveryLogin" class="primary gold">Volver a ingresar</button>
+    `);
+    document.getElementById("retryRecoveryLogin").onclick=()=>realAuthModal("login");
+    return false;
+  }
+
+  // Cargar el estado normal recién después de tener una sesión válida.
+  await loadRealAccount();
+  showRecoveryPasswordModal();
+  return true;
+}
+
+async function bootstrapReal(){
+  // El callback de onAuthStateChange NO hace await a métodos de Supabase.
+  // Se difiere el trabajo para evitar bloquear el mutex interno de Auth.
+  sb.auth.onAuthStateChange((event,session)=>{
     if(event==="PASSWORD_RECOVERY"){
       passwordRecoveryIntent=true;
     }
 
-    await loadRealAccount();
-    await loadPublicProfilesIntoExistingUI();
+    setTimeout(async()=>{
+      try{
+        if(passwordRecoveryIntent){
+          const {data}=await sb.auth.getSession();
+          if(data?.session?.user){
+            await loadRealAccount();
+            showRecoveryPasswordModal();
+            return;
+          }
+        }
 
-    if(maybeOpenRecovery())return;
-    if(appState.route==="realizadores")renderDirectory();
+        await loadRealAccount();
+        await loadPublicProfilesIntoExistingUI();
+        if(appState.route==="realizadores")renderDirectory();
+      }catch(err){
+        console.error("Auth state refresh:",err);
+      }
+    },0);
   });
 
   await loadRealRoles();
-  await loadRealAccount();
-  await loadPublicProfilesIntoExistingUI();
 
-  // Fallback importante: si PASSWORD_RECOVERY ocurrió antes de que el listener
-  // quedara activo, initialAuthHash conserva que el enlace era de recovery.
-  if(maybeOpenRecovery()){
+  // La query ?recovery=1 es nuestro marcador persistente.
+  // Si está presente, no renderizamos la home primero:
+  // esperamos la sesión de recuperación y mostramos el formulario.
+  if(passwordRecoveryIntent){
+    renderDirectory();
+    openModal(`
+      <div class="eyebrow">RECUPERAR ACCESO</div>
+      <h2>Validando enlace…</h2>
+      <p>Estamos verificando tu solicitud de recuperación.</p>
+    `);
+
+    const ok=await enterRecoveryMode();
+    if(ok){
+      await loadPublicProfilesIntoExistingUI();
+    }
     return;
   }
+
+  await loadRealAccount();
+  await loadPublicProfilesIntoExistingUI();
 
   if(realState.user){
     sb.channel("my-notifications")
@@ -1707,14 +2030,5 @@ async function bootstrapReal(){
   }
 
   route();
-
-  // Segundo fallback para navegadores donde el hash se procesa un instante
-  // después de la carga inicial.
-  setTimeout(async()=>{
-    if(passwordRecoveryIntent && !recoveryModalShown){
-      await loadRealAccount();
-      maybeOpenRecovery();
-    }
-  },250);
 }
 bootstrapReal();
