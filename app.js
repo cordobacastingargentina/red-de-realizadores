@@ -35,7 +35,7 @@ function closeModal(){
   modal.classList.add("hidden");backdrop.classList.add("hidden");modal.classList.remove("wide");
   if((location.hash||"").startsWith("#perfil/")) history.replaceState(null,"",`${location.pathname}#realizadores`);
 }
-document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>realAccountModal();
+document.getElementById("closeModalBtn").onclick=closeModal;backdrop.onclick=closeModal;accountBtn.onclick=()=>{if(realState.isAdmin){location.hash="#administracion";return}realAccountModal()};
 if(notificationsBtn)notificationsBtn.onclick=notificationsModal;window.addEventListener("hashchange",route);document.querySelectorAll("[data-route]").forEach(a=>a.addEventListener("click",()=>{}));
 async function route(){
   const raw=(location.hash||"#realizadores").slice(1);
@@ -77,7 +77,11 @@ function renderDirectory(){app.innerHTML=`<section class="hero hero-cordoba hero
     <div class="hero-photo-fade"></div>
   </aside>
 </section><section class="search-panel wrap"><div class="search-line"><label>BUSCAR POR NOMBRE, ROL, HERRAMIENTA O PALABRA CLAVE</label><input id="searchInput" placeholder="Ej: dirección, guion, Blender, DaVinci, sonido…"></div><div class="filter-row"><select id="roleFilter"><option value="">Todos los roles</option>${realState.roles.map(r=>`<option>${esc(r.name)}</option>`).join("")}</select><label class="check"><input id="availableFilter" type="checkbox"> Disponible ahora</label><label class="check"><input id="studentFilter" type="checkbox"> Acepta estudiantiles</label><label class="check"><input id="verifiedFilter" type="checkbox"> Solo verificados</label><select id="sortFilter"><option value="relevance">Orden: relevancia</option><option value="recommendations">Más recomendados</option><option value="recent">Actualizados recientemente</option><option value="name">Nombre A–Z</option></select><button id="clearFilters" class="clear-btn">Limpiar filtros</button></div></section><section class="directory wrap"><div class="section-head"><div><span class="directory-kicker">PROFESIONALES AUDIOVISUALES DE CÓRDOBA</span><strong id="resultCount">0</strong> perfiles encontrados</div><button id="createProfile" class="gold-btn">Crear / editar mi perfil</button></div><div id="cards" class="cards"></div></section><section class="info-strip"><div class="wrap strip-grid"><div><span>01</span><strong>Un perfil claro</strong><p>Un rol principal y hasta cinco etiquetas útiles, sin spam.</p></div><div><span>02</span><strong>Reel o guion</strong><p>Video embebido; los guionistas principales pueden mostrar PDF.</p></div><div><span>03</span><strong>Recomendaciones</strong><p>Una recomendación por usuario, siempre vinculada a un proyecto.</p></div><div><span>04</span><strong>Perfiles verificados</strong><p>Distinción administrada por Córdoba Casting para trayectoria acreditada.</p></div></div></section>`;bindDirectory()}
-function bindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>new Date(b.p.updatedAt||0)-new Date(a.p.updatedAt||0));else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>{location.hash=`#perfil/${encodeURIComponent(x.dataset.profile)}`})};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>realState.user?realAccountModal():realAuthModal("register");
+function bindDirectory(){const q=document.getElementById("searchInput"),rf=document.getElementById("roleFilter"),av=document.getElementById("availableFilter"),st=document.getElementById("studentFilter"),vf=document.getElementById("verifiedFilter"),sort=document.getElementById("sortFilter");const draw=()=>{let arr=profiles.map(p=>({p,rank:matchRank(p,q.value,rf.value)})).filter(x=>x.rank>=0).filter(x=>!av.checked||x.p.available).filter(x=>!st.checked||x.p.students).filter(x=>!vf.checked||x.p.verified).filter(x=>x.p.status==="approved"&&x.p.visibility!=="hidden");if(sort.value==="recommendations")arr.sort((a,b)=>b.p.recommendationCount-a.p.recommendationCount||b.rank-a.rank);else if(sort.value==="name")arr.sort((a,b)=>a.p.name.localeCompare(b.p.name));else if(sort.value==="recent")arr.sort((a,b)=>new Date(b.p.updatedAt||0)-new Date(a.p.updatedAt||0));else arr.sort((a,b)=>b.rank-a.rank||b.p.recommendationCount-a.p.recommendationCount);document.getElementById("resultCount").textContent=arr.length;document.getElementById("cards").innerHTML=arr.map(x=>cardHtml(x.p)).join("");document.querySelectorAll("[data-profile]").forEach(x=>x.onclick=()=>{location.hash=`#perfil/${encodeURIComponent(x.dataset.profile)}`})};[q,rf,av,st,vf,sort].forEach(x=>x.addEventListener(x.tagName==="INPUT"&&x.type==="text"?"input":"change",draw));document.getElementById("clearFilters").onclick=()=>{q.value="";rf.value="";av.checked=st.checked=vf.checked=false;sort.value="relevance";draw()};document.getElementById("createProfile").onclick=()=>{
+  if(!realState.user){realAuthModal("register");return}
+  if(realState.isAdmin){location.hash="#administracion";return}
+  realAccountModal();
+};
 
 draw()}
 function cardHtml(p){return`<article class="card" data-profile="${p.id}"><div><div class="card-index"><span>PERFIL PROFESIONAL</span>${p.verified?verifiedBadge(false):""}${topBadge(p)}</div><div class="role">${esc(p.primary)}</div><div class="person">${esc(p.name)}</div><div class="secondary">${p.tags.map(esc).join(" · ")}</div><div class="status-row">${p.available?'<span class="pill on">DISPONIBLE</span>':'<span class="pill">NO DISPONIBLE</span>'}${p.students?'<span class="pill on">ESTUDIANTILES</span>':''}</div><div class="recommendation-count"><b>★ ${p.recommendationCount}</b> recomendaciones</div></div><div class="avatar">${liveAvatarUrl(p)?`<img src="${liveAvatarUrl(p)}" alt="${esc(p.name)}">`:initials(p.name)}</div></article>`}
@@ -403,7 +407,7 @@ async function loadRealJobs(){
   realJobsCache=rows.map(j=>({
     id:j.id,
     authorId:j.author_id,
-    author:authorMap.get(j.author_id)||"Realizador",
+    author:j.published_by_admin?"Córdoba Casting":(authorMap.get(j.author_id)||"Realizador"),
     title:j.title,
     description:j.description,
     student:Boolean(j.is_student_project),
@@ -525,12 +529,12 @@ async function realJobModal(id){
     <div class="profile-section">
       <h4>Publicación</h4>
       <p>Publicó <strong>${esc(j.author)}</strong> · quedan <strong>${esc(j.remainingText)}</strong>.</p>
-      ${!isAuthor?`<button id="realParticipateBtn" class="primary gold">${ownApplication?"✓ Ya participás":"Participar con mi perfil"}</button>`:"<div class='notice'>Esta búsqueda fue publicada por vos.</div>"}
+      ${(!isAuthor&&!realState.isAdmin)?`<button id="realParticipateBtn" class="primary gold">${ownApplication?"✓ Ya participás":"Participar con mi perfil"}</button>`:(isAuthor?"<div class='notice'>Esta búsqueda fue publicada por vos.</div>":"<div class='notice'>Estás viendo esta búsqueda como administración.</div>")}
     </div>
     ${isAuthor||realState.isAdmin?`<div class="profile-section">
       <h4>Perfiles interesados</h4>
       <div class="participants">
-        ${applications.length?applications.map(a=>realApplicantHtml(a,pmap.get(a.applicant_id))).join(""):"<p>Todavía no hay postulaciones.</p>"}
+        ${applications.length?applications.map(a=>realApplicantHtml(a,pmap.get(a.applicant_id))).join(""):"<p>Todavía no hay personas interesadas.</p>"}
       </div>
     </div>`:""}`,true);
 
@@ -553,6 +557,7 @@ function realApplicantHtml(a,p){
 
 async function createRealApplication(jobId){
   if(!realState.user){realAuthModal("login");return}
+  if(realState.isAdmin){alert("La cuenta de administración de Córdoba Casting no participa como perfil profesional.");return}
   if(realState.profile?.status!=="approved"){
     alert("Tu perfil debe estar aprobado por Córdoba Casting para participar en búsquedas.");
     return;
@@ -574,7 +579,7 @@ async function removeRealApplication(applicationId,jobId){
 
 function newRealJobModal(){
   if(!realState.user){realAuthModal("login");return}
-  if(realState.profile?.status!=="approved"){
+  if(!realState.isAdmin && realState.profile?.status!=="approved"){
     openModal(`<div class="eyebrow">PUBLICAR BÚSQUEDA</div><h2>Tu perfil todavía no puede publicar</h2><p>Para publicar búsquedas, tu perfil primero debe estar aprobado por Córdoba Casting.</p>`);
     return;
   }
@@ -807,11 +812,13 @@ async function loadPublicProfilesIntoExistingUI(){
       is_visible,
       status,
       profile_updated_at,
+      is_system_account,
       roles:primary_role_id(name),
       profile_tags(tag)
     `)
     .eq("status","approved")
     .eq("is_visible",true)
+    .eq("is_system_account",false)
     .order("profile_updated_at",{ascending:false});
 
   if(error){
@@ -906,7 +913,7 @@ function updateRealAccountButton(){
     return;
   }
 
-  accountBtn.textContent="Mi cuenta";
+  accountBtn.textContent=realState.isAdmin?"Panel admin":"Mi cuenta";
   if(adminNavLink)adminNavLink.hidden=!realState.isAdmin;
   if(notificationsBtn)notificationsBtn.hidden=false;
 
@@ -1423,25 +1430,26 @@ async function renderAdministration(){
       <div>
         <div class="eyebrow">CÓRDOBA CASTING / ADMINISTRACIÓN</div>
         <h1 class="page-title">Panel de administración.</h1>
-        <p>Gestioná perfiles, búsquedas, postulaciones y la biblioteca de recursos desde un único lugar.</p>
+        <p>Gestioná perfiles, búsquedas y la biblioteca de recursos desde un único lugar.</p>
       </div>
+      <button id="adminLogoutTop" class="outline">Cerrar sesión</button>
     </div>
 
     <div class="admin-page-tabs">
       <button data-admin-section="profiles" class="active">Perfiles</button>
       <button data-admin-section="jobs">Búsquedas</button>
-      <button data-admin-section="applications">Postulaciones</button>
       <button data-admin-section="resources">Recursos</button>
     </div>
 
     <div id="adminPageContent" class="admin-page-content"></div>
   </section>`;
 
+  document.getElementById("adminLogoutTop").onclick=realLogout;
+
   document.querySelectorAll("[data-admin-section]").forEach(b=>b.onclick=()=>{
     document.querySelectorAll("[data-admin-section]").forEach(x=>x.classList.toggle("active",x===b));
     if(b.dataset.adminSection==="profiles")renderAdminProfilesSection("pending");
     if(b.dataset.adminSection==="jobs")renderAdminJobsSection();
-    if(b.dataset.adminSection==="applications")renderAdminApplicationsSection();
     if(b.dataset.adminSection==="resources")renderAdminResourcesSection();
   });
 
@@ -1462,6 +1470,7 @@ async function renderAdminProfilesSection(filter="pending"){
 
   let query=sb.from("profiles")
     .select("*, roles:primary_role_id(name), profile_moderation(rejection_reason,submitted_at,reviewed_at), profile_tags(tag)")
+    .eq("is_system_account",false)
     .order("created_at",{ascending:false});
 
   if(filter!=="all")query=query.eq("status",filter);
@@ -1534,7 +1543,7 @@ async function renderAdminJobsSection(){
   const rmap=new Map(realState.roles.map(r=>[Number(r.id),r.name]));
   const amap=new Map(authorsData.map(a=>[a.id,a.full_name]));
 
-  content.innerHTML=`<div class="admin-section-intro"><strong>${rows.length}</strong> búsquedas totales · activas y expiradas.</div>
+  content.innerHTML=`<div class="admin-resource-head"><div class="admin-section-intro"><strong>${rows.length}</strong> búsquedas totales · activas y expiradas.</div><button id="adminNewJob" class="gold-btn">+ Nueva búsqueda</button></div>
     <div class="admin-list">${rows.map(j=>{
       const active=new Date(j.expires_at)>new Date();
       const roles=rolesData.filter(r=>Number(r.job_post_id)===Number(j.id)).map(r=>rmap.get(Number(r.role_id))).filter(Boolean);
@@ -1542,7 +1551,7 @@ async function renderAdminJobsSection(){
         <div>
           <h4>${esc(j.title)}</h4>
           <div class="secondary">${roles.map(esc).join(" · ")}</div>
-          <small>${active?`ACTIVA · ${esc(remainingLabel(j.expires_at))} restantes`:"EXPIRADA"} · por ${esc(amap.get(j.author_id)||"Realizador")} · ${j.is_student_project?"ESTUDIANTIL":"NO ESTUDIANTIL"} · ${j.is_paid?"REMUNERADA":"NO INDICA REMUNERACIÓN"}</small>
+          <small>${active?`ACTIVA · ${esc(remainingLabel(j.expires_at))} restantes`:"EXPIRADA"} · por ${esc(j.published_by_admin?"Córdoba Casting":(amap.get(j.author_id)||"Realizador"))} · ${j.is_student_project?"ESTUDIANTIL":"NO ESTUDIANTIL"} · ${j.is_paid?"REMUNERADA":"NO INDICA REMUNERACIÓN"}</small>
         </div>
         <div class="admin-actions">
           <button data-aj-view="${j.id}">Ver</button>
@@ -1552,10 +1561,11 @@ async function renderAdminJobsSection(){
       </div>`;
     }).join("")||"<p>No hay búsquedas.</p>"}</div>`;
 
+  document.getElementById("adminNewJob").onclick=newRealJobModal;
   document.querySelectorAll("[data-aj-view]").forEach(b=>b.onclick=()=>adminViewJobModal(Number(b.dataset.ajView)));
   document.querySelectorAll("[data-aj-edit]").forEach(b=>b.onclick=()=>adminEditJobModal(Number(b.dataset.ajEdit)));
   document.querySelectorAll("[data-aj-delete]").forEach(b=>b.onclick=async()=>{
-    if(!confirm("¿Eliminar definitivamente esta búsqueda y sus postulaciones?"))return;
+    if(!confirm("¿Eliminar definitivamente esta búsqueda y los registros de personas interesadas?"))return;
     const {error}=await sb.from("job_posts").delete().eq("id",Number(b.dataset.ajDelete));
     if(error)alert(error.message);else {await loadRealJobs();renderAdminJobsSection()}
   });
@@ -1683,13 +1693,37 @@ async function renderAdminResourcesSection(){
   });
   document.querySelectorAll("[data-ar-delete]").forEach(b=>b.onclick=async()=>{
     if(!confirm("¿Eliminar definitivamente este recurso? Esta acción no se puede deshacer."))return;
+    const row=rows.find(r=>Number(r.id)===Number(b.dataset.arDelete));
     const {error}=await sb.from("resources").delete().eq("id",Number(b.dataset.arDelete));
-    if(error)alert(error.message);else renderAdminResourcesSection();
+    if(error){alert(error.message);return}
+    const paths=[row?.pdf_path,row?.editable_path].filter(Boolean);
+    if(paths.length)await sb.storage.from("resources").remove(paths);
+    renderAdminResourcesSection();
   });
+}
+function safeResourceFilename(name){
+  return String(name||"archivo")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-zA-Z0-9._-]+/g,"-")
+    .replace(/-+/g,"-")
+    .replace(/^-|-$/g,"")
+    .slice(-120) || "archivo";
+}
+async function uploadAdminResourceFile(file,kind){
+  if(!file)return null;
+  const max=25*1024*1024;
+  if(file.size>max)throw new Error("El archivo supera los 25 MB.");
+  if(kind==="pdf" && file.type!=="application/pdf" && !file.name.toLowerCase().endsWith(".pdf"))throw new Error("El archivo PDF debe ser .pdf.");
+  const path=`${realState.user.id}/${Date.now()}-${kind}-${safeResourceFilename(file.name)}`;
+  const {error}=await sb.storage.from("resources").upload(path,file,{upsert:false,contentType:file.type||undefined});
+  if(error)throw error;
+  const {data}=sb.storage.from("resources").getPublicUrl(path);
+  if(!data?.publicUrl)throw new Error("No se pudo obtener la URL pública del archivo.");
+  return {path,url:data.publicUrl};
 }
 function adminResourceModal(resource=null){
   const editing=!!resource;
-  const r=resource||{resource_type:"download",title:"",excerpt:"",category:"Preproducción",cover_url:"",content:"",pdf_url:"",editable_url:"",is_visible:true,is_featured:false,sort_order:0};
+  const r=resource||{resource_type:"download",title:"",excerpt:"",category:"Preproducción",cover_url:"",content:"",pdf_url:"",editable_url:"",pdf_path:null,editable_path:null,is_visible:true,is_featured:false,sort_order:0};
   openModal(`<div class="eyebrow">ADMIN / RECURSOS</div>
     <h2>${editing?"Editar recurso":"Nuevo recurso"}</h2>
     <form id="adminResourceForm" class="form-grid resource-admin-form">
@@ -1701,13 +1735,17 @@ function adminResourceModal(resource=null){
         <label>Orden<input id="resourceSort" type="number" min="0" max="9999" value="${Number(r.sort_order)||0}"><span class="char-count">0 aparece antes que 10.</span></label>
       </div>
       <datalist id="resourceCategoryOptions"><option>Preproducción</option><option>Rodaje</option><option>Dirección</option><option>Guion</option><option>Producción</option><option>Postproducción</option><option>Sonido</option><option>Arte</option><option>Otros</option></datalist>
-      <label>URL de portada <span class="optional-label">opcional</span><input id="resourceCover" type="url" value="${esc(r.cover_url||"")}" placeholder="https://..."><span class="char-count">Puede ser una imagen alojada en tu web, Drive público, etc.</span></label>
+      <label>URL de portada <span class="optional-label">opcional</span><input id="resourceCover" type="url" value="${esc(r.cover_url||"")}" placeholder="https://..."><span class="char-count">La portada sigue siendo opcional; podés usar una imagen pública.</span></label>
       <div id="resourceDownloadFields" class="resource-admin-conditional">
-        <div class="resource-admin-two">
-          <label>Link PDF <span class="optional-label">opcional</span><input id="resourcePdf" type="url" value="${esc(r.pdf_url||"")}" placeholder="https://..."></label>
-          <label>Link editable <span class="optional-label">opcional</span><input id="resourceEditable" type="url" value="${esc(r.editable_url||"")}" placeholder="https://..."></label>
+        <div class="resource-upload-box">
+          <div><strong>PDF</strong><span>${r.pdf_url?"Ya hay un PDF cargado. Elegí otro solamente si querés reemplazarlo.":"Subí el PDF que la gente podrá descargar."}</span></div>
+          <input id="resourcePdfFile" type="file" accept="application/pdf,.pdf">
         </div>
-        <span class="char-count">En un descargable debe existir al menos uno de los dos links.</span>
+        <div class="resource-upload-box">
+          <div><strong>Archivo editable</strong><span>${r.editable_url?"Ya hay un editable cargado. Elegí otro solamente si querés reemplazarlo.":"DOCX, XLSX, PPTX, ZIP u otro archivo editable."}</span></div>
+          <input id="resourceEditableFile" type="file" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf,.zip,.pages,.numbers,.key">
+        </div>
+        <span class="char-count">Podés subir uno solo o ambos. Máximo 25 MB por archivo.</span>
       </div>
       <div id="resourceArticleFields" class="resource-admin-conditional">
         <label>Contenido del tutorial<textarea id="resourceContent" class="resource-content-editor" placeholder="Escribí el tutorial acá...">${esc(r.content||"")}</textarea></label>
@@ -1720,47 +1758,71 @@ function adminResourceModal(resource=null){
       <div id="resourceAdminFeedback"></div>
       <button class="primary gold" type="submit">${editing?"Guardar cambios":"Crear recurso"}</button>
     </form>`,true);
+
   const type=document.getElementById("resourceType");
   const download=document.getElementById("resourceDownloadFields");
   const article=document.getElementById("resourceArticleFields");
   const sync=()=>{const isArticle=type.value==="article";download.hidden=isArticle;article.hidden=!isArticle};
   type.onchange=sync;sync();
+
   document.getElementById("adminResourceForm").onsubmit=async e=>{
     e.preventDefault();
     const fb=document.getElementById("resourceAdminFeedback");
     const resource_type=type.value;
-    const pdf_url=document.getElementById("resourcePdf").value.trim()||null;
-    const editable_url=document.getElementById("resourceEditable").value.trim()||null;
     const content=document.getElementById("resourceContent").value.trim()||null;
-    if(resource_type==="download"&&!pdf_url&&!editable_url){fb.innerHTML=authNotice("Agregá al menos un link: PDF o editable.");return}
+    const pdfFile=document.getElementById("resourcePdfFile").files?.[0]||null;
+    const editableFile=document.getElementById("resourceEditableFile").files?.[0]||null;
+
+    if(resource_type==="download"&&!pdfFile&&!editableFile&&!r.pdf_url&&!r.editable_url){fb.innerHTML=authNotice("Subí al menos un archivo: PDF o editable.");return}
     if(resource_type==="article"&&!content){fb.innerHTML=authNotice("Escribí el contenido del tutorial.");return}
-    const payload={
-      resource_type,
-      title:document.getElementById("resourceTitle").value.trim(),
-      excerpt:document.getElementById("resourceExcerpt").value.trim(),
-      category:document.getElementById("resourceCategory").value.trim(),
-      cover_url:document.getElementById("resourceCover").value.trim()||null,
-      content:resource_type==="article"?content:null,
-      pdf_url:resource_type==="download"?pdf_url:null,
-      editable_url:resource_type==="download"?editable_url:null,
-      is_visible:document.getElementById("resourceVisible").checked,
-      is_featured:document.getElementById("resourceFeatured").checked,
-      sort_order:Math.max(0,Number(document.getElementById("resourceSort").value)||0)
-    };
-    fb.innerHTML=authNotice("Guardando…");
-    let result;
-    if(editing)result=await sb.from("resources").update(payload).eq("id",r.id);
-    else result=await sb.from("resources").insert({...payload,created_by:realState.user.id});
-    if(result.error){fb.innerHTML=authNotice(result.error.message);return}
-    closeModal();
-    renderAdminResourcesSection();
+
+    fb.innerHTML=authNotice("Guardando recurso y subiendo archivos…");
+    let newPdf=null,newEditable=null;
+    try{
+      if(resource_type==="download" && pdfFile)newPdf=await uploadAdminResourceFile(pdfFile,"pdf");
+      if(resource_type==="download" && editableFile)newEditable=await uploadAdminResourceFile(editableFile,"editable");
+
+      const payload={
+        resource_type,
+        title:document.getElementById("resourceTitle").value.trim(),
+        excerpt:document.getElementById("resourceExcerpt").value.trim(),
+        category:document.getElementById("resourceCategory").value.trim(),
+        cover_url:document.getElementById("resourceCover").value.trim()||null,
+        content:resource_type==="article"?content:null,
+        pdf_url:resource_type==="download"?(newPdf?.url||r.pdf_url||null):null,
+        editable_url:resource_type==="download"?(newEditable?.url||r.editable_url||null):null,
+        pdf_path:resource_type==="download"?(newPdf?.path||r.pdf_path||null):null,
+        editable_path:resource_type==="download"?(newEditable?.path||r.editable_path||null):null,
+        is_visible:document.getElementById("resourceVisible").checked,
+        is_featured:document.getElementById("resourceFeatured").checked,
+        sort_order:Math.max(0,Number(document.getElementById("resourceSort").value)||0)
+      };
+
+      let result;
+      if(editing)result=await sb.from("resources").update(payload).eq("id",r.id);
+      else result=await sb.from("resources").insert({...payload,created_by:realState.user.id});
+      if(result.error)throw result.error;
+
+      const oldPaths=[];
+      if(newPdf && r.pdf_path)oldPaths.push(r.pdf_path);
+      if(newEditable && r.editable_path)oldPaths.push(r.editable_path);
+      if(resource_type==="article")oldPaths.push(...[r.pdf_path,r.editable_path].filter(Boolean));
+      if(oldPaths.length)await sb.storage.from("resources").remove([...new Set(oldPaths)]);
+
+      closeModal();
+      renderAdminResourcesSection();
+    }catch(err){
+      const cleanup=[newPdf?.path,newEditable?.path].filter(Boolean);
+      if(cleanup.length)await sb.storage.from("resources").remove(cleanup);
+      fb.innerHTML=authNotice(err.message||"No se pudo guardar el recurso.");
+    }
   };
 }
 
 async function renderAdminApplicationsSection(){
   const content=document.getElementById("adminPageContent");
   if(!content)return;
-  content.innerHTML=authNotice("Cargando postulaciones…");
+  content.innerHTML=authNotice("Cargando personas interesadas…");
 
   const {data,error}=await sb.from("job_applications")
     .select("id,job_post_id,applicant_id,created_at,is_visible")
@@ -1785,7 +1847,7 @@ async function renderAdminApplicationsSection(){
   const jmap=new Map(jobsData.map(j=>[Number(j.id),j]));
   const pmap=new Map(profilesData.map(p=>[p.id,p]));
 
-  content.innerHTML=`<div class="admin-section-intro"><strong>${apps.length}</strong> postulaciones totales.</div><div class="admin-list">${
+  content.innerHTML=`<div class="admin-section-intro"><strong>${apps.length}</strong> personas interesadas en búsquedas.</div><div class="admin-list">${
     apps.map(a=>{
       const j=jmap.get(Number(a.job_post_id)),p=pmap.get(a.applicant_id);
       return `<div class="admin-row">
@@ -1816,7 +1878,7 @@ async function renderAdminApplicationsSection(){
 }
 
 async function realAdminPanel(){
-  openModal(`<div class="eyebrow">CÓRDOBA CASTING / ADMIN REAL</div><h2>Gestión de perfiles</h2><p>Esta vista ya consulta tu proyecto Supabase real.</p><div class="admin-toolbar"><button data-real-admin-filter="pending">Pendientes</button><button data-real-admin-filter="approved">Publicados</button><button data-real-admin-filter="rejected">Rechazados</button><button data-real-admin-filter="all">Todos</button><button id="realAdminApplications">Postulaciones</button><button id="realAdminLogout">Salir</button></div><div id="realAdminList" class="admin-panel">${authNotice("Cargando…")}</div>`,true);
+  openModal(`<div class="eyebrow">CÓRDOBA CASTING / ADMIN REAL</div><h2>Gestión de perfiles</h2><p>Esta vista ya consulta tu proyecto Supabase real.</p><div class="admin-toolbar"><button data-real-admin-filter="pending">Pendientes</button><button data-real-admin-filter="approved">Publicados</button><button data-real-admin-filter="rejected">Rechazados</button><button data-real-admin-filter="all">Todos</button><button id="realAdminApplications">Interesados</button><button id="realAdminLogout">Salir</button></div><div id="realAdminList" class="admin-panel">${authNotice("Cargando…")}</div>`,true);
   document.getElementById("realAdminLogout").onclick=realLogout;
   document.querySelectorAll("[data-real-admin-filter]").forEach(b=>b.onclick=()=>drawRealAdmin(b.dataset.realAdminFilter));
   document.getElementById("realAdminApplications").onclick=drawRealAdminApplications;
@@ -1845,7 +1907,7 @@ function bindRealAdminActions(filter){
 
 async function drawRealAdminApplications(){
   const list=document.getElementById("realAdminList");
-  list.innerHTML=authNotice("Cargando postulaciones…");
+  list.innerHTML=authNotice("Cargando personas interesadas…");
 
   const {data,error}=await sb.from("job_applications")
     .select("id,job_post_id,applicant_id,created_at,is_visible")

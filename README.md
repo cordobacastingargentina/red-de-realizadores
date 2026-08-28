@@ -96,3 +96,13 @@ En el editor:
 - URLs que empiezan por `http://` o `https://` se vuelven enlaces.
 
 No se guarda HTML arbitrario: el texto se escapa antes de renderizar para evitar inyección de código.
+
+
+## V1.1.1 — Admin / búsquedas / recursos
+- Los administradores son cuentas de sistema: no aparecen como realizadores ni necesitan perfil profesional.
+- Las búsquedas de admin se muestran como publicadas por “Córdoba Casting”.
+- Se corrige la renovación de búsquedas: hasta 10 días desde el momento de editar.
+- Se elimina “Postulaciones” como pestaña global de administración; los interesados se consultan dentro de cada búsqueda.
+- Recursos descargables ahora permite subir PDF y editable directamente desde Administración.
+- Nuevo bucket público `resources`, con escritura exclusiva de administradores.
+- Para aplicar los cambios ejecutar `10_admin_resources_fixes.sql` después de `09_resources.sql`.
